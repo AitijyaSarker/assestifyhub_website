@@ -25,6 +25,7 @@ import { useCmsStore } from "@/hooks/use-cms-store";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 import architecture from "@/assets/architecture.jpg";
+import heroVideo from "@/assets/assestifyrobo.mp4";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -65,8 +66,8 @@ function IndexPage() {
         {/* HERO SECTION */}
         <section className="hero" aria-labelledby="hero-title">
           <div className="site-container hero-grid">
-            <div className="reveal-up">
-              <div className="eyebrow">{siteContent.heroEyebrow}</div>
+            <div className="reveal-up hero-copy-block">
+              <div className="eyebrow justify-center">{siteContent.heroEyebrow}</div>
               <h1 id="hero-title" className="hero-title">Assetify Hub.</h1>
               <h2 className="hero-statement">
                 {siteContent.heroHeadline}
@@ -75,7 +76,7 @@ function IndexPage() {
                 {siteContent.heroCopy}
               </p>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap justify-center gap-3">
                 <Button variant="brand" asChild>
                   <Link to="/book-consultation">
                     Book Consultation <Sparkles className="size-4 ml-1" />
@@ -87,7 +88,7 @@ function IndexPage() {
               </div>
 
               {/* Live editorial metrics, not client-performance claims */}
-              <div className="mt-8 grid max-w-lg grid-cols-3 gap-4 border-t border-border pt-6">
+              <div className="mx-auto mt-8 grid max-w-lg grid-cols-3 gap-4 border-t border-border pt-6">
                 {[
                   { value: visibleServices.length, label: "Published capabilities" },
                   { value: projects.filter((project) => project.isVisible && project.isConcept).length, label: "Illustrative concepts" },
@@ -103,17 +104,17 @@ function IndexPage() {
 
             {/* Visual Container */}
             <figure className="hero-visual visual-reveal">
-              <img
-                src={architecture}
-                alt="Contemporary glass technology hub architecture"
-                width={1088}
-                height={1360}
-                fetchPriority="high"
+              <video
+                className="hero-visual-video"
+                src={heroVideo}
+                poster={architecture}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                aria-label="Assetify Hub animated technology showcase"
               />
-              <figcaption>
-                <span>Built on clarity. Designed for what's next.</span>
-                <span>01 / VISION</span>
-              </figcaption>
             </figure>
           </div>
         </section>
@@ -123,29 +124,27 @@ function IndexPage() {
         {sectionVisible("company") && <div style={{ order: sectionOrder("company") }}>
         <section id="company" className="py-16 sm:py-20 border-y border-border" aria-labelledby="company-title">
           <div className="site-container">
-            <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 lg:gap-16 items-start">
-              <div>
-                <div className="eyebrow">About Assetify Hub</div>
-                <h2 id="company-title" className="section-title">
-                  {siteContent.aboutTitle}
-                </h2>
-              </div>
-              <div>
-                <p className="text-base leading-relaxed text-muted-foreground">
-                  {siteContent.aboutCopy}
-                </p>
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    { title: "Purpose", description: "Turn business needs into useful digital products and services." },
-                    { title: "Approach", description: "Connect strategy, experience, and engineering from the start." },
-                    { title: "Focus", description: "Build with usability, security, and long-term care in mind." },
-                  ].map((item) => (
-                    <div key={item.title} className="rounded-xl border border-border bg-card p-4">
-                      <h3 className="text-sm font-bold text-foreground">{item.title}</h3>
-                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{item.description}</p>
-                    </div>
-                  ))}
-                </div>
+            <div className="home-section-heading mb-10">
+              <div className="eyebrow justify-center">About Assetify Hub</div>
+              <h2 id="company-title" className="section-title">
+                {siteContent.aboutTitle}
+              </h2>
+            </div>
+            <div>
+              <p className="mx-auto max-w-4xl text-base leading-relaxed text-muted-foreground">
+                {siteContent.aboutCopy}
+              </p>
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {[
+                  { title: "Purpose", description: "Turn business needs into useful digital products and services." },
+                  { title: "Approach", description: "Connect strategy, experience, and engineering from the start." },
+                  { title: "Focus", description: "Build with usability, security, and long-term care in mind." },
+                ].map((item) => (
+                  <div key={item.title} className="rounded-xl border border-border bg-card p-4">
+                    <h3 className="text-sm font-bold text-foreground">{item.title}</h3>
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{item.description}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -169,8 +168,8 @@ function IndexPage() {
         {/* CAPABILITY PILLARS SECTION */}
         {sectionVisible("services") && <div style={{ order: sectionOrder("services") }}><section id="services" className="section-band" aria-labelledby="services-title">
           <div className="site-container">
-            <div className="section-heading">
-              <div className="eyebrow">Our Capabilities</div>
+            <div className="section-heading home-section-heading">
+              <div className="eyebrow justify-center">Our Capabilities</div>
               <h2 id="services-title" className="section-title">
                 {siteContent.servicesTitle}
               </h2>
@@ -204,7 +203,7 @@ function IndexPage() {
         {/* WHY CHOOSE US GRID */}
         {sectionVisible("why_us") && <div style={{ order: sectionOrder("why_us") }}><section id="why-us" className="py-20 bg-muted/30 border-t border-border">
           <div className="site-container">
-            <div className="text-center max-w-2xl mx-auto mb-16">
+            <div className="home-section-heading max-w-2xl mb-16">
               <div className="eyebrow justify-center">Engineering Standards</div>
               <h2 className="section-title">{siteContent.whyTitle}</h2>
               <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
@@ -233,7 +232,7 @@ function IndexPage() {
         {/* ENGINEERING PROCESS STEPS */}
         {sectionVisible("process") && <div style={{ order: sectionOrder("process") }}><section id="process" className="py-20 border-t border-border">
           <div className="site-container">
-            <div className="text-center max-w-xl mx-auto mb-16">
+            <div className="home-section-heading max-w-xl mb-16">
               <div className="eyebrow justify-center">Our Process</div>
               <h2 className="section-title">{siteContent.processTitle}</h2>
             </div>
@@ -253,6 +252,43 @@ function IndexPage() {
         </div>}
 
         {sectionVisible("products") && <div style={{ order: sectionOrder("products") }}><ProductsSection projects={projects} title={siteContent.productsTitle} /></div>}
+        <section
+          id="network-security"
+          aria-labelledby="network-security-title"
+          className="border-y border-border bg-muted/30 py-16 sm:py-20"
+        >
+          <div className="site-container">
+            <div className="mx-auto flex max-w-5xl flex-col gap-8 rounded-3xl border border-primary/20 bg-card p-7 shadow-sm sm:p-10 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl">
+                <div className="eyebrow">Network & Cybersecurity</div>
+                <h2 id="network-security-title" className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                  Stronger connections. Safer systems.
+                </h2>
+                <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+                  Need support with network infrastructure, cloud security, or cybersecurity?
+                  We’re open to helping you plan, protect, and strengthen your technology.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {["Network infrastructure", "Cloud security", "Cybersecurity"].map((service) => (
+                    <span
+                      key={service}
+                      className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                      {service}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <Button variant="brand" className="shrink-0" asChild>
+                <a
+                  href={`mailto:${settings.contactEmail}?subject=${encodeURIComponent("Network and cybersecurity enquiry")}`}
+                >
+                  Discuss your needs <ArrowUpRight className="size-4" />
+                </a>
+              </Button>
+            </div>
+          </div>
+        </section>
         {sectionVisible("gallery") && <div style={{ order: sectionOrder("gallery") }}><GallerySection items={gallery} title={siteContent.galleryTitle} /></div>}
         {sectionVisible("awards") && <div style={{ order: sectionOrder("awards") }}><AwardsSection awards={awards} title={siteContent.awardsTitle} /></div>}
         {sectionVisible("reviews") && <div style={{ order: sectionOrder("reviews") }}><ReviewsSection reviews={reviews} title={siteContent.reviewsTitle} /></div>}
@@ -268,8 +304,10 @@ function IndexPage() {
               itemType="https://schema.org/Organization"
             >
               <div className="site-container">
-                <div className="eyebrow">Company Snapshot</div>
-                <h2 id="facts-title" className="section-title">Clear facts about {settings.brandName}</h2>
+                  <div className="home-section-heading">
+                    <div className="eyebrow justify-center">Company Snapshot</div>
+                    <h2 id="facts-title" className="section-title">Clear facts about {settings.brandName}</h2>
+                  </div>
                 <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="rounded-xl border border-border bg-card p-5">
                     <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Organization</h3>
@@ -296,12 +334,13 @@ function IndexPage() {
         {/* FAQ & LEADERSHIP NOTE */}
         {sectionVisible("faq") && <div style={{ order: sectionOrder("faq") }}><section className="py-20 border-t border-border">
           <div className="site-container">
+            <div className="home-section-heading mb-12">
+              <div className="eyebrow justify-center">Frequently Asked Questions</div>
+              <h2 className="text-3xl font-bold text-foreground">{siteContent.faqTitle}</h2>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               {/* FAQ Accordion */}
               <div>
-                <div className="eyebrow">Frequently Asked Questions</div>
-                <h2 className="text-3xl font-bold text-foreground mb-6">{siteContent.faqTitle}</h2>
-
                 <div className="space-y-4">
                   {faqs.map((faq, idx) => (
                     <div key={idx} className="p-5 rounded-xl border border-border bg-card space-y-2">

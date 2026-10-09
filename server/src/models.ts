@@ -127,7 +127,11 @@ export const LeadSchema = new Schema({
   serviceInterest: { type: String },
   budgetRange: { type: String },
   projectBrief: { type: String },
-  status: { type: String, enum: ["New", "Contacted", "Confirmed", "Cancelled"], default: "New" },
+  status: {
+    type: String,
+    enum: ["New", "Contacted", "Confirmed", "Cancelled", "pending", "confirmed", "completed", "cancelled"],
+    default: "New",
+  },
   createdAt: { type: Date, default: Date.now }
 });
 export const Lead = mongoose.models.Lead || mongoose.model("Lead", LeadSchema);

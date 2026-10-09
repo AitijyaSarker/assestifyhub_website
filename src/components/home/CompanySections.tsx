@@ -19,9 +19,9 @@ export function ProductsSection({ projects, title }: { projects: Project[]; titl
   return (
     <section id="work" className="portfolio-band" aria-labelledby="work-title">
       <div className="site-container">
-        <div className="portfolio-heading">
+        <div className="portfolio-heading home-section-heading">
           <div>
-            <div className="eyebrow">Products & Projects</div>
+            <div className="eyebrow justify-center">Products & Projects</div>
             <h2 id="work-title" className="section-title">
               {title}
             </h2>
@@ -170,11 +170,24 @@ export function ReviewsSection({ reviews, title }: { reviews: Review[]; title: s
       aria-labelledby="reviews-title"
     >
       <div className="site-container">
-        <div className="eyebrow">Reviews</div>
-        <h2 id="reviews-title" className="section-title mb-8">
-          {title}
-        </h2>
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div>
+            <div className="eyebrow">Reviews & Testimonials</div>
+            <h2 id="reviews-title" className="section-title">
+              {title}
+            </h2>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/review"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary/90 transition-all"
+            >
+              <Star className="size-3.5 fill-current" />
+              Submit Your Review
+            </Link>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
           {approvedReviews.map((review) => (
             <figure key={review.id} className="rounded-2xl border border-border bg-card p-6">
               <div
@@ -223,8 +236,8 @@ export function CareersSection({
       aria-labelledby="careers-title"
     >
       <div className="site-container">
-        <div className="mb-8 max-w-2xl">
-          <div className="eyebrow">Careers</div>
+        <div className="home-section-heading mb-8">
+          <div className="eyebrow justify-center">Careers</div>
           <h2 id="careers-title" className="section-title">
             {title}
           </h2>

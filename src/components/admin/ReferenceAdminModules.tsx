@@ -11,12 +11,20 @@ import type {
   GalleryItem,
   JobPosition,
   Review,
+  ServiceCategory,
   SiteContent,
 } from "@/lib/cms-store";
 import { cmsStore } from "@/lib/cms-store";
 
 export type AdminModuleTab =
-  "site-content" | "vacancies" | "gallery" | "awards" | "time-slots" | "reviews" | "messages";
+  | "site-content"
+  | "service-categories"
+  | "vacancies"
+  | "gallery"
+  | "awards"
+  | "time-slots"
+  | "reviews"
+  | "messages";
 type AdminTab = AdminModuleTab;
 type Draft = Record<string, string | number | boolean>;
 type Field = {
@@ -54,12 +62,20 @@ const CONTENT_FIELDS: Field[] = [
 const MESSAGE_FIELDS: Field[] = [
   { key: "name", label: "Sender name", required: true },
   { key: "email", label: "Email address", required: true },
+  { key: "phone", label: "Phone number" },
   { key: "subject", label: "Subject" },
   { key: "message", label: "Message", type: "textarea", required: true },
   { key: "read", label: "Mark as read", type: "checkbox" },
 ];
 
 const COLLECTION_FIELDS: Record<Exclude<AdminTab, "site-content" | "messages">, Field[]> = {
+  "service-categories": [
+    { key: "name", label: "Category name", required: true },
+    { key: "slug", label: "URL slug", required: true },
+    { key: "description", label: "Description", type: "textarea" },
+    { key: "order", label: "Display order", type: "number" },
+    { key: "active", label: "Visible in navigation & services", type: "checkbox" },
+  ],
   vacancies: [
     { key: "title", label: "Role title", required: true },
     { key: "department", label: "Department", required: true },
@@ -87,7 +103,8 @@ const COLLECTION_FIELDS: Record<Exclude<AdminTab, "site-content" | "messages">, 
     { key: "isVisible", label: "Show on landing page", type: "checkbox" },
   ],
   "time-slots": [
-    { key: "label", label: "Available time", required: true },
+    { key: "label", label: "Available time label", required: true },
+    { key: "value", label: "Value (e.g. 09:00)", required: true },
     { key: "order", label: "Display order", type: "number" },
     { key: "isAvailable", label: "Available for enquiries", type: "checkbox" },
   ],
@@ -105,6 +122,10 @@ const TAB_DETAILS: Record<AdminTab, { title: string; description: string }> = {
   "site-content": {
     title: "Site Content",
     description: "Edit the landing-page messages and section headings shown to visitors.",
+  },
+  "service-categories": {
+    title: "Service Categories",
+    description: "Categories shown in the Services navbar menu and assigned to products.",
   },
   vacancies: {
     title: "Vacancies",
@@ -132,6 +153,7 @@ const TAB_DETAILS: Record<AdminTab, { title: string; description: string }> = {
   },
 };
 const COLLECTION_LABELS: Record<Exclude<AdminTab, "site-content">, string> = {
+  "service-categories": "Service Category",
   vacancies: "Vacancy",
   gallery: "Gallery Item",
   awards: "Award",
@@ -165,6 +187,13 @@ const parseContentRows = (value: unknown, columns: number) =>
 const newDraft = (tab: AdminTab, content: SiteContent): Draft => {
   if (tab === "site-content") return contentToDraft(content);
   const defaults: Record<Exclude<AdminTab, "site-content">, Draft> = {
+    "service-categories": {
+      name: "",
+      slug: "",
+      description: "",
+      order: 1,
+      active: true,
+    },
     vacancies: {
       title: "",
       department: "",
@@ -176,21 +205,23 @@ const newDraft = (tab: AdminTab, content: SiteContent): Draft => {
     },
     gallery: { title: "", image: "", altText: "", caption: "", order: 1, isVisible: false },
     awards: { title: "", image: "", issuer: "", year: "", description: "", order: 1, isVisible: false },
-    "time-slots": { label: "", order: 1, isAvailable: true },
+    "time-slots": { label: "", value: "09:00", order: 1, isAvailable: true },
     reviews: { name: "", company: "", role: "", rating: 5, message: "", approved: false },
-    messages: { name: "", email: "", subject: "", message: "", read: false },
+    messages: { name: "", email: "", phone: "", subject: "", message: "", read: false },
   };
   return { ...defaults[tab] };
 };
 
 export function ReferenceAdminModules({ tab, user }: { tab: AdminTab; user?: string }) {
-  const { siteContent, jobs, gallery, awards, reviews, timeSlots, messages } = useCmsStore();
+  const { siteContent, jobs, gallery, awards, reviews, timeSlots, messages, serviceCategories } = useCmsStore();
   const { session } = useAuth();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(() =>
     tab === "site-content" ? contentToDraft(siteContent) : {},
   );
   const [formOpen, setFormOpen] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState<"all" | "pending" | "approved">("all");
+  const [messageFilter, setMessageFilter] = useState<"all" | "unread">("all");
   const details = TAB_DETAILS[tab];
   const isCollection = tab !== "site-content";
   const fields =
@@ -202,11 +233,19 @@ export function ReferenceAdminModules({ tab, user }: { tab: AdminTab; user?: str
 
   const records = (() => {
     switch (tab) {
+      case "service-categories":
+        return serviceCategories.map((item) => ({
+          id: item.id,
+          title: item.name,
+          detail: `${item.slug} · ${item.description || "No description"} (Order: ${item.order})`,
+          visible: item.active,
+          item,
+        }));
       case "vacancies":
         return jobs.map((item) => ({
           id: item.id,
           title: item.title,
-          detail: `${item.department} · ${item.location}`,
+          detail: `${item.department} · ${item.location} · ${item.hiring ? "Hiring" : "Closed"}`,
           visible: item.isVisible,
           item,
         }));
@@ -230,26 +269,37 @@ export function ReferenceAdminModules({ tab, user }: { tab: AdminTab; user?: str
         return timeSlots.map((item) => ({
           id: item.id,
           title: item.label,
-          detail: `Display order ${item.order}`,
+          detail: `Value: ${item.value || "-"} · Display order ${item.order}`,
           visible: item.isAvailable,
           item,
         }));
-      case "reviews":
-        return reviews.map((item) => ({
+      case "reviews": {
+        const filtered = reviews.filter((r) => {
+          if (reviewFilter === "pending") return !r.approved;
+          if (reviewFilter === "approved") return r.approved;
+          return true;
+        });
+        return filtered.map((item) => ({
           id: item.id,
           title: item.name,
-          detail: `${item.rating}/5 · ${item.company || "No company"} · ${item.message}`,
+          detail: `★ ${item.rating}/5 · ${item.company || "No company"} (${item.role || "Client"}) · "${item.message}"`,
           visible: item.approved,
           item,
         }));
-      case "messages":
-        return messages.map((item) => ({
+      }
+      case "messages": {
+        const filtered = messages.filter((m) => {
+          if (messageFilter === "unread") return !m.read;
+          return true;
+        });
+        return filtered.map((item) => ({
           id: item.id,
           title: item.subject || item.name,
-          detail: `${item.name} · ${item.email} · ${item.message}`,
+          detail: `${item.name} (${item.email}${item.phone ? `, ${item.phone}` : ""}) · ${item.message}`,
           visible: item.read,
           item,
         }));
+      }
       case "site-content":
         return [];
     }
@@ -307,6 +357,16 @@ export function ReferenceAdminModules({ tab, user }: { tab: AdminTab; user?: str
         closingCopy: String(draft["closingCopy"] ?? ""),
       };
       cmsStore.updateSiteContent(content, user);
+    } else if (tab === "service-categories") {
+      const item: ServiceCategory = {
+        id: editingId || `cat-${Date.now()}`,
+        name: String(draft["name"] || ""),
+        slug: String(draft["slug"] || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        description: String(draft["description"] || ""),
+        order: Number(draft["order"]) || 1,
+        active: Boolean(draft["active"]),
+      };
+      cmsStore.saveServiceCategory(item, user);
     } else if (tab === "vacancies") {
       const requirements = String(draft["requirements"] || "")
         .split(/\r?\n/)
@@ -323,6 +383,8 @@ export function ReferenceAdminModules({ tab, user }: { tab: AdminTab; user?: str
         description: String(draft["description"] || ""),
         requirements,
         isVisible: Boolean(draft["isVisible"]),
+        hiring: Boolean(draft["isVisible"]),
+        order: 1,
       };
       cmsStore.saveJob(job, user);
     } else if (tab === "gallery") {
@@ -352,8 +414,10 @@ export function ReferenceAdminModules({ tab, user }: { tab: AdminTab; user?: str
       const item: AvailabilitySlot = {
         id: editingId || `slot-${Date.now()}`,
         label: String(draft["label"] || ""),
+        value: String(draft["value"] || "09:00"),
         order: Number(draft["order"]) || 1,
         isAvailable: Boolean(draft["isAvailable"]),
+        active: Boolean(draft["isAvailable"]),
       };
       cmsStore.saveTimeSlot(item, user);
     } else if (tab === "reviews") {
@@ -373,6 +437,7 @@ export function ReferenceAdminModules({ tab, user }: { tab: AdminTab; user?: str
         id: editingId || `message-${Date.now()}`,
         name: String(draft["name"] || ""),
         email: String(draft["email"] || ""),
+        phone: String(draft["phone"] || ""),
         subject: String(draft["subject"] || ""),
         message: String(draft["message"] || ""),
         read: Boolean(draft["read"]),
@@ -386,6 +451,9 @@ export function ReferenceAdminModules({ tab, user }: { tab: AdminTab; user?: str
   const remove = (id: string) => {
     if (!window.confirm("Delete this item? This cannot be undone.")) return;
     switch (tab) {
+      case "service-categories":
+        cmsStore.deleteServiceCategory(id, user);
+        break;
       case "vacancies":
         cmsStore.deleteJob(id, user);
         break;
@@ -410,7 +478,10 @@ export function ReferenceAdminModules({ tab, user }: { tab: AdminTab; user?: str
   };
 
   const toggleRecord = (id: string, enabled: boolean) => {
-    if (tab === "vacancies") {
+    if (tab === "service-categories") {
+      const cat = serviceCategories.find((entry) => entry.id === id);
+      if (cat) cmsStore.saveServiceCategory({ ...cat, active: enabled }, user);
+    } else if (tab === "vacancies") {
       const job = jobs.find((entry) => entry.id === id);
       if (job) cmsStore.saveJob({ ...job, isVisible: enabled }, user);
     } else if (tab === "gallery") {
@@ -421,7 +492,7 @@ export function ReferenceAdminModules({ tab, user }: { tab: AdminTab; user?: str
       if (item) cmsStore.saveAward({ ...item, isVisible: enabled }, user);
     } else if (tab === "time-slots") {
       const item = timeSlots.find((entry) => entry.id === id);
-      if (item) cmsStore.saveTimeSlot({ ...item, isAvailable: enabled }, user);
+      if (item) cmsStore.saveTimeSlot({ ...item, isAvailable: enabled, active: enabled }, user);
     } else if (tab === "reviews") {
       const item = reviews.find((entry) => entry.id === id);
       if (item) cmsStore.saveReview({ ...item, approved: enabled }, user);
@@ -448,6 +519,38 @@ export function ReferenceAdminModules({ tab, user }: { tab: AdminTab; user?: str
           </Button>
         ) : null}
       </header>
+
+      {tab === "reviews" && (
+        <div className="flex gap-2 border-b border-border pb-3">
+          {(["all", "pending", "approved"] as const).map((mode) => (
+            <Button
+              key={mode}
+              size="sm"
+              variant={reviewFilter === mode ? "default" : "outline"}
+              onClick={() => setReviewFilter(mode)}
+              className="capitalize text-xs"
+            >
+              {mode} ({mode === "all" ? reviews.length : mode === "pending" ? reviews.filter((r) => !r.approved).length : reviews.filter((r) => r.approved).length})
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {tab === "messages" && (
+        <div className="flex gap-2 border-b border-border pb-3">
+          {(["all", "unread"] as const).map((mode) => (
+            <Button
+              key={mode}
+              size="sm"
+              variant={messageFilter === mode ? "default" : "outline"}
+              onClick={() => setMessageFilter(mode)}
+              className="capitalize text-xs"
+            >
+              {mode} ({mode === "all" ? messages.length : messages.filter((m) => !m.read).length})
+            </Button>
+          ))}
+        </div>
+      )}
 
       {tab === "site-content" ? (
         <form
@@ -483,7 +586,7 @@ export function ReferenceAdminModules({ tab, user }: { tab: AdminTab; user?: str
       ) : records.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
           {tab === "messages"
-            ? "Enquiries open an email draft and are not saved to a shared inbox. Add a message here to keep a local administrative record."
+            ? "No messages yet. Visitor chat and contact enquiries will appear here."
             : `No ${details.title.toLowerCase()} yet. Add an item when you have real content to publish.`}
         </div>
       ) : (

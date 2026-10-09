@@ -8,6 +8,8 @@ export interface SiteSettings {
   faviconUrl: string;
   contactEmail: string;
   contactPhone: string;
+  whatsappContact: string;
+  messengerContact: string;
   address: string;
   socialLinks: {
     linkedin: string;
@@ -17,6 +19,15 @@ export interface SiteSettings {
   };
   themeDefault: 'light' | 'dark' | 'system';
   analyticsId: string;
+}
+
+export interface ServiceCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  active: boolean;
+  order: number;
 }
 
 export interface Service {
@@ -101,9 +112,11 @@ export interface ConsultationLead {
   phone: string;
   company: string;
   serviceInterest: string;
+  topic?: string;
   budgetRange: string;
   projectBrief: string;
-  status: 'New' | 'Contacted' | 'Confirmed' | 'Cancelled';
+  message?: string;
+  status: 'New' | 'Contacted' | 'Confirmed' | 'Cancelled' | 'pending' | 'confirmed' | 'completed' | 'cancelled';
   createdAt: string;
 }
 
@@ -112,10 +125,12 @@ export interface JobPosition {
   title: string;
   department: string;
   location: string;
-  type: 'Full-Time' | 'Contract' | 'Part-Time';
+  type: string;
   description: string;
   requirements: string[];
   isVisible: boolean;
+  hiring?: boolean;
+  order?: number;
 }
 
 export interface TeamMember {
@@ -224,11 +239,15 @@ export interface Review {
   message: string;
   approved: boolean;
   createdAt: string;
+  avatarUrl?: string;
+  email?: string;
 }
 
 export interface AvailabilitySlot {
   id: string;
   label: string;
+  value?: string;
+  active?: boolean;
   isAvailable: boolean;
   order: number;
 }
@@ -237,6 +256,7 @@ export interface ContactMessage {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   subject: string;
   message: string;
   read: boolean;
@@ -252,6 +272,8 @@ const defaultSettings: SiteSettings = {
   faviconUrl: "/favicon.svg",
   contactEmail: "welisten@assetify.com",
   contactPhone: "+1 (800) 555-2773",
+  whatsappContact: "",
+  messengerContact: "",
   address: "100 Innovation Way, Suite 400, New York, NY 10001",
   socialLinks: {
     linkedin: "https://linkedin.com",
@@ -510,9 +532,53 @@ In modern cloud infrastructure, traditional corporate perimeters no longer exist
   }
 ];
 
+export const defaultServiceCategories: ServiceCategory[] = [
+  { id: "cat-1", name: "Engineering & Design", slug: "engineering-design", description: "Custom software architecture and digital user experience.", active: true, order: 1 },
+  { id: "cat-2", name: "Brand & Digital Growth", slug: "brand-digital-growth", description: "Brand strategy, SEO engineering, and performance marketing.", active: true, order: 2 },
+  { id: "cat-3", name: "Infrastructure & Security", slug: "infrastructure-security", description: "Cloud reliability, Zero-Trust network access, and cybersecurity.", active: true, order: 3 },
+  { id: "cat-4", name: "Enterprise Platforms", slug: "enterprise-platforms", description: "Scalable SaaS, API microservices, and workflow automation.", active: true, order: 4 },
+];
+
 const defaultLeads: ConsultationLead[] = [];
 
-const defaultJobs: JobPosition[] = [];
+const defaultJobs: JobPosition[] = [
+  {
+    id: "job-1",
+    title: "Senior Full-Stack Engineer",
+    department: "Engineering",
+    location: "New York, NY / Remote",
+    type: "Full-Time",
+    description: "Architect scalable Next.js and TypeScript microservices for enterprise applications.",
+    requirements: ["5+ years TypeScript & React", "Deep Node.js & microservices experience", "Commitment to automated testing and clean architecture"],
+    isVisible: true,
+    hiring: true,
+    order: 1
+  },
+  {
+    id: "job-2",
+    title: "Lead UI/UX Product Designer",
+    department: "Design & Experience",
+    location: "New York, NY / Hybrid",
+    type: "Full-Time",
+    description: "Design comprehensive enterprise design systems and high-converting web applications.",
+    requirements: ["Strong Figma systems design portfolio", "Experience with design tokens and accessibility (WCAG AA)", "Deep understanding of frontend component libraries"],
+    isVisible: true,
+    hiring: true,
+    order: 2
+  },
+  {
+    id: "job-3",
+    title: "DevSecOps & Cloud Architect",
+    department: "Infrastructure & Security",
+    location: "Remote",
+    type: "Full-Time",
+    description: "Design zero-trust cloud infrastructure on AWS/Kubernetes with automated threat mitigation.",
+    requirements: ["Hands-on Kubernetes, Terraform, and Docker", "SOC 2 & ISO 27001 compliance readiness experience", "CI/CD pipeline automation"],
+    isVisible: true,
+    hiring: true,
+    order: 3
+  }
+];
 
 const defaultTeam: TeamMember[] = [
   {
@@ -668,10 +734,39 @@ const defaultAuditLogs: AuditLog[] = [
   }
 ];
 
+const defaultGallery: GalleryItem[] = [
+  { id: "gal-1", title: "Enterprise Architecture Studio", image: "/assets/architecture.jpg", altText: "Modern engineering lab", caption: "Our collaborative systems engineering lab.", isVisible: true, order: 1 },
+  { id: "gal-2", title: "Mobile Experience Prototyping", image: "/assets/mobile-concept.jpg", altText: "Mobile prototyping sessions", caption: "High-fidelity interaction design sprint.", isVisible: true, order: 2 },
+  { id: "gal-3", title: "Real-time Telemetry Dashboard", image: "/assets/web-concept.jpg", altText: "Analytics data wall", caption: "Mission-critical observability interfaces.", isVisible: true, order: 3 },
+];
+
+const defaultAwards: Award[] = [
+  { id: "awd-1", title: "Best Enterprise Architecture 2026", issuer: "Global Tech Index", year: "2026", description: "Recognized for resilient zero-trust software architecture.", isVisible: true, order: 1 },
+  { id: "awd-2", title: "Excellence in Digital Engineering", issuer: "Software Craft Alliance", year: "2025", description: "Awarded for exceptional code quality and platform scalability.", isVisible: true, order: 2 },
+  { id: "awd-3", title: "Design Systems Innovation", issuer: "UX Leadership Guild", year: "2025", description: "Honored for human-centered enterprise UI/UX design tokens.", isVisible: true, order: 3 },
+];
+
+const defaultReviews: Review[] = [
+  { id: "rev-1", name: "David Sterling", company: "Apex Global Financial", role: "Chief Technology Officer", rating: 5, message: "Assetify Hub engineered our core trading microservices with flawless precision. Their attention to performance and security exceeded all expectations.", approved: true, createdAt: "2026-09-15" },
+  { id: "rev-2", name: "Elena Rostova", company: "Vanguard Health Systems", role: "VP of Product", rating: 5, message: "The interface clarity and design system they created transformed how our clinicians interact with patient records. Truly a world-class team.", approved: true, createdAt: "2026-09-28" },
+  { id: "rev-3", name: "Marcus Chen", company: "Hyperion Logistics", role: "Head of Infrastructure", rating: 5, message: "From zero-trust network hardening to automated failover, Assetify Hub delivered rock-solid reliability on our cloud transition.", approved: true, createdAt: "2026-10-02" },
+];
+
+const defaultTimeSlots: AvailabilitySlot[] = [
+  { id: "slot-1", label: "09:00 AM - 09:30 AM", value: "09:00", active: true, isAvailable: true, order: 1 },
+  { id: "slot-2", label: "10:00 AM - 10:30 AM", value: "10:00", active: true, isAvailable: true, order: 2 },
+  { id: "slot-3", label: "11:00 AM - 11:30 AM", value: "11:00", active: true, isAvailable: true, order: 3 },
+  { id: "slot-4", label: "01:30 PM - 02:00 PM", value: "13:30", active: true, isAvailable: true, order: 4 },
+  { id: "slot-5", label: "02:30 PM - 03:00 PM", value: "14:30", active: true, isAvailable: true, order: 5 },
+  { id: "slot-6", label: "03:30 PM - 04:00 PM", value: "15:30", active: true, isAvailable: true, order: 6 },
+  { id: "slot-7", label: "04:30 PM - 05:00 PM", value: "16:30", active: true, isAvailable: true, order: 7 },
+];
+
 export interface CmsStoreState {
   settings: SiteSettings;
   siteContent: SiteContent;
   services: Service[];
+  serviceCategories: ServiceCategory[];
   techStack: TechStackItem[];
   projects: Project[];
   blogPosts: BlogPost[];
@@ -700,6 +795,7 @@ class CmsStore {
   public settings: SiteSettings = defaultSettings;
   public siteContent: SiteContent = defaultSiteContent;
   public services: Service[] = defaultServices;
+  public serviceCategories: ServiceCategory[] = defaultServiceCategories;
   public techStack: TechStackItem[] = defaultTechStack;
   public projects: Project[] = defaultProjects;
   public blogPosts: BlogPost[] = defaultBlogPosts;
@@ -710,18 +806,10 @@ class CmsStore {
   public customPages: CustomPage[] = defaultCustomPages;
   public mediaAssets: MediaAsset[] = defaultMediaAssets;
   public auditLogs: AuditLog[] = defaultAuditLogs;
-  public gallery: GalleryItem[] = [];
-  public awards: Award[] = [];
-  public reviews: Review[] = [];
-  public timeSlots: AvailabilitySlot[] = [
-    { id: "slot-1", label: "09:00 AM", isAvailable: true, order: 1 },
-    { id: "slot-2", label: "10:00 AM", isAvailable: true, order: 2 },
-    { id: "slot-3", label: "11:00 AM", isAvailable: true, order: 3 },
-    { id: "slot-4", label: "01:30 PM", isAvailable: true, order: 4 },
-    { id: "slot-5", label: "02:30 PM", isAvailable: true, order: 5 },
-    { id: "slot-6", label: "03:30 PM", isAvailable: true, order: 6 },
-    { id: "slot-7", label: "04:30 PM", isAvailable: true, order: 7 },
-  ];
+  public gallery: GalleryItem[] = defaultGallery;
+  public awards: Award[] = defaultAwards;
+  public reviews: Review[] = defaultReviews;
+  public timeSlots: AvailabilitySlot[] = defaultTimeSlots;
   public messages: ContactMessage[] = [];
 
   public getState(): CmsStoreState {
@@ -730,6 +818,7 @@ class CmsStore {
         settings: this.settings,
         siteContent: this.siteContent,
         services: this.services,
+        serviceCategories: this.serviceCategories,
         techStack: this.techStack,
         projects: this.projects,
         blogPosts: this.blogPosts,
@@ -801,6 +890,7 @@ class CmsStore {
         this.siteContent = { ...defaultSiteContent, ...snapshot["siteContent"] as Partial<SiteContent> };
       }
       if (Array.isArray(snapshot["services"])) this.services = snapshot["services"] as Service[];
+      if (Array.isArray(snapshot["serviceCategories"])) this.serviceCategories = snapshot["serviceCategories"] as ServiceCategory[];
       if (Array.isArray(snapshot["techStack"])) this.techStack = snapshot["techStack"] as TechStackItem[];
       if (Array.isArray(snapshot["projects"])) this.projects = snapshot["projects"] as Project[];
       if (Array.isArray(snapshot["blogPosts"])) this.blogPosts = snapshot["blogPosts"] as BlogPost[];
@@ -823,7 +913,14 @@ class CmsStore {
         this.sectionLayouts = [...knownSections, ...extraSections].sort((a, b) => a.order - b.order);
       }
       if (isAdmin) {
-        if (Array.isArray(snapshot["leads"])) this.leads = snapshot["leads"] as ConsultationLead[];
+        if (Array.isArray(snapshot["leads"])) {
+          this.leads = snapshot["leads"].filter(
+            (lead): lead is ConsultationLead =>
+              Boolean(lead) &&
+              typeof lead === "object" &&
+              typeof (lead as ConsultationLead).id === "string",
+          );
+        }
         if (Array.isArray(snapshot["messages"])) this.messages = snapshot["messages"] as ContactMessage[];
         if (Array.isArray(snapshot["auditLogs"])) this.auditLogs = snapshot["auditLogs"] as AuditLog[];
         if (Array.isArray(snapshot["mediaAssets"])) this.mediaAssets = snapshot["mediaAssets"] as MediaAsset[];
@@ -847,10 +944,18 @@ class CmsStore {
         if (parsed.settings) this.settings = parsed.settings;
         if (parsed.siteContent) this.siteContent = { ...defaultSiteContent, ...parsed.siteContent };
         if (parsed.services) this.services = parsed.services;
+        if (Array.isArray(parsed.serviceCategories)) this.serviceCategories = parsed.serviceCategories;
         if (parsed.techStack) this.techStack = parsed.techStack;
         if (parsed.projects) this.projects = parsed.projects;
         if (parsed.blogPosts) this.blogPosts = parsed.blogPosts;
-        if (parsed.leads) this.leads = parsed.leads;
+        if (Array.isArray(parsed.leads)) {
+          this.leads = parsed.leads.filter(
+            (lead: unknown): lead is ConsultationLead =>
+              Boolean(lead) &&
+              typeof lead === "object" &&
+              typeof (lead as ConsultationLead).id === "string",
+          );
+        }
         if (parsed.jobs) this.jobs = parsed.jobs;
         if (parsed.team) this.team = parsed.team;
         if (Array.isArray(parsed.sectionLayouts)) {
@@ -881,6 +986,7 @@ class CmsStore {
         settings: this.settings,
         siteContent: this.siteContent,
         services: this.services,
+        serviceCategories: this.serviceCategories,
         techStack: this.techStack,
         projects: this.projects,
         blogPosts: this.blogPosts,
@@ -1054,10 +1160,69 @@ class CmsStore {
     this.saveToLocalStorage();
   }
 
-  public deleteMessage(id: string, user = "admin@assetify.com") {
-    this.messages = this.messages.filter((message) => message.id !== id);
-    this.logAction(user, "DELETE_MESSAGE", id);
+  // SERVICE CATEGORIES CRUD
+  public saveServiceCategory(category: ServiceCategory, user = "admin@assetify.com") {
+    const index = this.serviceCategories.findIndex((c) => c.id === category.id);
+    if (index >= 0) {
+      this.serviceCategories[index] = category;
+      this.logAction(user, "UPDATE_SERVICE_CATEGORY", `Updated category: ${category.name}`);
+    } else {
+      this.serviceCategories.push(category);
+      this.logAction(user, "CREATE_SERVICE_CATEGORY", `Created category: ${category.name}`);
+    }
     this.saveToLocalStorage();
+  }
+
+  public deleteServiceCategory(id: string, user = "admin@assetify.com") {
+    const c = this.serviceCategories.find((x) => x.id === id);
+    this.serviceCategories = this.serviceCategories.filter((x) => x.id !== id);
+    this.logAction(user, "DELETE_SERVICE_CATEGORY", `Deleted category: ${c?.name || id}`);
+    this.saveToLocalStorage();
+  }
+
+  public addReview(review: Omit<Review, "id" | "createdAt" | "approved">) {
+    const newReview: Review = {
+      ...review,
+      id: `rev-${Date.now()}`,
+      approved: false,
+      createdAt: new Date().toISOString().split("T")[0],
+    };
+    this.reviews = [newReview, ...this.reviews];
+    this.logAction("public", "NEW_REVIEW_SUBMITTED", `Review from ${newReview.name}`);
+    this.saveToLocalStorage();
+    return newReview;
+  }
+
+  public toggleReviewApproval(id: string, user = "admin@assetify.com") {
+    const review = this.reviews.find((r) => r.id === id);
+    if (review) {
+      review.approved = !review.approved;
+      this.logAction(user, review.approved ? "APPROVE_REVIEW" : "UNPUBLISH_REVIEW", `Review: ${review.name}`);
+      this.saveToLocalStorage();
+    }
+  }
+
+  public addProjectAccessRequest(projectId: string, data: { name: string; email: string; phone?: string; company?: string; message?: string }) {
+    const project = this.projects.find((p) => p.id === projectId || p.slug === projectId);
+    const title = project?.title || "Project";
+    const newMessage: ContactMessage = {
+      id: `msg-${Date.now()}`,
+      name: data.name.trim(),
+      email: data.email.trim(),
+      phone: data.phone?.trim() || "",
+      subject: `Project Access: ${title}`,
+      message: [
+        `Requested access to project: ${title}`,
+        data.company ? `Company: ${data.company}` : "",
+        data.message ? `Notes: ${data.message}` : "",
+      ].filter(Boolean).join("\n\n"),
+      read: false,
+      createdAt: new Date().toISOString(),
+    };
+    this.messages = [newMessage, ...this.messages];
+    this.logAction("public", "REQUEST_PROJECT_ACCESS", `Access request for ${title} from ${data.email}`);
+    this.saveToLocalStorage();
+    return newMessage;
   }
 
   // SERVICES CRUD

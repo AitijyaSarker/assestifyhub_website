@@ -27,9 +27,10 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [servicesDropdown, setServicesDropdown] = useState(false);
+  const [projectsDropdown, setProjectsDropdown] = useState(false);
   const [companyDropdown, setCompanyDropdown] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { settings, services } = useCmsStore();
+  const { settings, services, serviceCategories, projects } = useCmsStore();
   const navigate = useNavigate();
 
   // Keyboard shortcut Ctrl+K / Cmd+K for search
@@ -44,9 +45,8 @@ export function Header() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const pillar1Services = services.filter((s) => s.pillar === "Engineering & Design");
-  const pillar2Services = services.filter((s) => s.pillar === "Brand & Digital Growth");
-  const pillar3Services = services.filter((s) => s.pillar === "Infrastructure & Security");
+  const activeCategories = serviceCategories.filter((c) => c.active).sort((a, b) => a.order - b.order);
+  const visibleProjects = projects.filter((p) => p.isVisible);
 
   return (
     <>
@@ -67,12 +67,12 @@ export function Header() {
           </Link>
 
           {/* Desktop Navigation Tree */}
-          <nav aria-label="Main navigation" className="hidden lg:flex items-center gap-7">
+          <nav aria-label="Main navigation" className="hidden lg:flex items-center gap-6">
             <Link to="/" className="nav-link font-medium text-sm">
               Home
             </Link>
 
-            {/* Services Mega-menu Dropdown */}
+            {/* Services Dropdown (reads active serviceCategories from CMS) */}
             <div 
               className="relative"
               onMouseEnter={() => setServicesDropdown(true)}
@@ -83,83 +83,115 @@ export function Header() {
               </button>
 
               {servicesDropdown && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 w-[780px] p-6 bg-card border border-border rounded-xl shadow-2xl z-50 grid grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {/* Category 1 */}
-                  <div>
-                    <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-primary mb-3">
-                      <Code2 className="size-4" /> Engineering & Design
-                    </div>
-                    <ul className="space-y-2">
-                      {pillar1Services.map((item) => (
-                        <li key={item.id}>
-                          <Link 
-                            to={`/services/$slug`} 
-                            params={{ slug: item.slug }}
-                            className="text-xs font-medium text-muted-foreground hover:text-foreground hover:translate-x-1 transition-all block py-1"
-                          >
-                            {item.title}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                <div className="absolute top-full left-0 w-72 p-3 bg-card border border-border rounded-xl shadow-2xl z-50 space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Service Capabilities
                   </div>
-
-                  {/* Category 2 */}
-                  <div>
-                    <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-primary mb-3">
-                      <TrendingUp className="size-4" /> Brand & Digital Growth
-                    </div>
-                    <ul className="space-y-2">
-                      {pillar2Services.map((item) => (
-                        <li key={item.id}>
-                          <Link 
-                            to={`/services/$slug`} 
-                            params={{ slug: item.slug }}
-                            className="text-xs font-medium text-muted-foreground hover:text-foreground hover:translate-x-1 transition-all block py-1"
-                          >
-                            {item.title}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Category 3 */}
-                  <div>
-                    <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-wider text-primary mb-3">
-                      <ShieldCheck className="size-4" /> Infrastructure & Security
-                    </div>
-                    <ul className="space-y-2">
-                      {pillar3Services.map((item) => (
-                        <li key={item.id}>
-                          <Link 
-                            to={`/services/$slug`} 
-                            params={{ slug: item.slug }}
-                            className="text-xs font-medium text-muted-foreground hover:text-foreground hover:translate-x-1 transition-all block py-1"
-                          >
-                            {item.title}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="col-span-3 pt-4 border-t border-border flex items-center justify-between bg-muted/40 -mx-6 -mb-6 p-4 rounded-b-xl">
-                    <span className="text-xs text-muted-foreground">Looking for custom architecture or security audits?</span>
-                    <Link to="/book-consultation" className="text-xs font-semibold text-primary flex items-center gap-1 hover:underline">
-                      Book technical consultation <ArrowUpRight className="size-3.5" />
+                  {activeCategories.length > 0 ? (
+                    activeCategories.map((cat) => {
+                      // Check if a project matches this category
+                      const matchingProject = visibleProjects.find(
+                        (p) => p.category?.toLowerCase() === cat.name.toLowerCase() || p.categoryId === cat.id
+                      );
+                      const targetUrl = matchingProject 
+                        ? `/projects/${matchingProject.slug}` 
+                        : `/projects?category=${encodeURIComponent(cat.name)}`;
+                      return (
+                        <Link 
+                          key={cat.id} 
+                          to={targetUrl}
+                          className="flex items-center justify-between p-2 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        >
+                          <span>{cat.name}</span>
+                          <ArrowUpRight className="size-3 text-muted-foreground" />
+                        </Link>
+                      );
+                    })
+                  ) : (
+                    services.slice(0, 6).map((item) => (
+                      <Link 
+                        key={item.id} 
+                        to={`/services/$slug`} 
+                        params={{ slug: item.slug }}
+                        className="flex items-center justify-between p-2 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        <span>{item.title}</span>
+                        <ArrowUpRight className="size-3 text-muted-foreground" />
+                      </Link>
+                    ))
+                  )}
+                  <div className="pt-2 border-t border-border mt-1">
+                    <Link 
+                      to="/services" 
+                      className="flex items-center justify-between px-2.5 py-1.5 text-xs font-bold text-primary hover:underline"
+                    >
+                      <span>Explore All Services</span>
+                      <ArrowUpRight className="size-3.5" />
                     </Link>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Projects / Case Studies */}
-            <Link to="/projects" className="nav-link font-medium text-sm">
-              Projects
+            {/* Projects Dropdown (lists product records + View All) */}
+            <div 
+              className="relative"
+              onMouseEnter={() => setProjectsDropdown(true)}
+              onMouseLeave={() => setProjectsDropdown(false)}
+            >
+              <button className="nav-link font-medium text-sm flex items-center gap-1 cursor-pointer">
+                Projects <ChevronDown className={`size-3.5 transition-transform ${projectsDropdown ? "rotate-180 text-primary" : ""}`} />
+              </button>
+
+              {projectsDropdown && (
+                <div className="absolute top-full left-0 w-80 p-3 bg-card border border-border rounded-xl shadow-2xl z-50 space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Featured Systems & Case Studies
+                  </div>
+                  {visibleProjects.slice(0, 5).map((p) => (
+                    <Link 
+                      key={p.id} 
+                      to={`/projects/$slug`} 
+                      params={{ slug: p.slug }}
+                      className="flex items-start justify-between gap-2 p-2 rounded-lg text-xs hover:bg-muted transition-colors group"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                          {p.title}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {p.category}
+                        </div>
+                      </div>
+                      {p.isFeatured && (
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">
+                          Featured
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                  <div className="pt-2 border-t border-border mt-1">
+                    <Link 
+                      to="/projects" 
+                      className="flex items-center justify-between px-2.5 py-1.5 text-xs font-bold text-primary hover:underline"
+                    >
+                      <span>View All Projects</span>
+                      <ArrowUpRight className="size-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Link to="/about" className="nav-link font-medium text-sm">
+              About
             </Link>
 
-            {/* Company Dropdown */}
+            <Link to="/contact" className="nav-link font-medium text-sm">
+              Contact
+            </Link>
+
+            {/* Company Dropdown (About, Process, Why Choose Us, Reviews, Careers) */}
             <div 
               className="relative"
               onMouseEnter={() => setCompanyDropdown(true)}
@@ -170,7 +202,7 @@ export function Header() {
               </button>
 
               {companyDropdown && (
-                <div className="absolute top-full left-0 w-60 p-3 bg-card border border-border rounded-xl shadow-2xl z-50 space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-full left-0 w-64 p-3 bg-card border border-border rounded-xl shadow-2xl z-50 space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
                   <Link 
                     to="/about" 
                     className="flex items-center gap-2.5 p-2.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -178,16 +210,22 @@ export function Header() {
                     <Building2 className="size-4 text-primary" /> About Us
                   </Link>
                   <Link 
-                    to="/why-us" 
+                    to="/process" 
                     className="flex items-center gap-2.5 p-2.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
-                    <Award className="size-4 text-primary" /> Why Us
+                    <Code2 className="size-4 text-primary" /> Our Process
                   </Link>
                   <Link 
-                    to="/team" 
+                    to="/why-choose-us" 
                     className="flex items-center gap-2.5 p-2.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
-                    <Users className="size-4 text-primary" /> Leadership & Team
+                    <Award className="size-4 text-primary" /> Why Choose Us
+                  </Link>
+                  <Link 
+                    to="/review" 
+                    className="flex items-center gap-2.5 p-2.5 rounded-lg text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    <Sparkles className="size-4 text-primary" /> Client Reviews
                   </Link>
                   <Link 
                     to="/careers" 
@@ -198,21 +236,6 @@ export function Header() {
                 </div>
               )}
             </div>
-
-            {/* Direct Why Us */}
-            <Link to="/why-us" className="nav-link font-medium text-sm">
-              Why Us
-            </Link>
-
-            {/* Blog & Insights */}
-            <Link to="/blog" className="nav-link font-medium text-sm">
-              Blog & Insights
-            </Link>
-
-            {/* Contact */}
-            <Link to="/contact" className="nav-link font-medium text-sm">
-              Contact
-            </Link>
           </nav>
 
           {/* Header Right Action Group */}
@@ -227,23 +250,23 @@ export function Header() {
               <Search className="size-5" />
             </button>
 
-            {/* Theme Toggle Button */}
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={toggleTheme}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-              title={`Switch to ${theme === "light" ? "Dark" : "Light"} mode`}
-              aria-label="Toggle theme mode"
+              title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             >
-              {theme === "light" ? <Moon className="size-5 text-slate-700" /> : <Sun className="size-5 text-amber-400" />}
-            </button>
+              {theme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}
+            </Button>
 
-            {/* Primary CTA Button */}
-            <Button 
-              variant="brand" 
-              onClick={() => navigate({ to: "/book-consultation" })}
+            <Button
+              variant="brand"
+              onClick={() => navigate({ to: "/schedule" })}
               className="hidden sm:inline-flex"
             >
-              Book Consultation <Sparkles className="size-4 ml-1" />
+              Schedule a Call
             </Button>
 
             {/* Mobile Menu Toggle */}
@@ -261,22 +284,26 @@ export function Header() {
 
         {/* Mobile Navigation Drawer */}
         {menuOpen && (
-          <nav className="site-container mobile-nav lg:hidden mt-3 animate-in fade-in slide-in-from-top-2" aria-label="Mobile navigation">
-            <Link to="/" className="nav-link font-semibold py-2" onClick={() => setMenuOpen(false)}>Home</Link>
-            <Link to="/services" className="nav-link font-semibold py-2" onClick={() => setMenuOpen(false)}>Services</Link>
-            <Link to="/projects" className="nav-link font-semibold py-2" onClick={() => setMenuOpen(false)}>Projects & Case Studies</Link>
-            <Link to="/why-us" className="nav-link font-semibold py-2" onClick={() => setMenuOpen(false)}>Why Us</Link>
-            <Link to="/about" className="nav-link font-semibold py-2" onClick={() => setMenuOpen(false)}>About Us</Link>
-            <Link to="/team" className="nav-link font-semibold py-2" onClick={() => setMenuOpen(false)}>Leadership & Team</Link>
-            <Link to="/careers" className="nav-link font-semibold py-2" onClick={() => setMenuOpen(false)}>Careers</Link>
-            <Link to="/blog" className="nav-link font-semibold py-2" onClick={() => setMenuOpen(false)}>Blog & Insights</Link>
-            <Link to="/contact" className="nav-link font-semibold py-2" onClick={() => setMenuOpen(false)}>Contact</Link>
+          <nav className="site-container mobile-nav lg:hidden mt-3 animate-in fade-in slide-in-from-top-2 space-y-2 pb-4" aria-label="Mobile navigation">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2 pt-2">Navigation</div>
+            <Link to="/" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>Home</Link>
+            <Link to="/services" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>Services</Link>
+            <Link to="/projects" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>Projects</Link>
+            <Link to="/about" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>About Us</Link>
+            <Link to="/contact" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>Contact</Link>
+
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2 pt-2 border-t border-border">Company</div>
+            <Link to="/process" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>Our Process</Link>
+            <Link to="/why-choose-us" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>Why Choose Us</Link>
+            <Link to="/review" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>Client Reviews</Link>
+            <Link to="/careers" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>Careers</Link>
+
             <Button 
               variant="brand" 
-              className="w-full mt-2" 
-              onClick={() => { setMenuOpen(false); navigate({ to: "/book-consultation" }); }}
+              className="w-full mt-3" 
+              onClick={() => { setMenuOpen(false); navigate({ to: "/schedule" }); }}
             >
-              Book Consultation <ArrowUpRight className="size-4" />
+              Schedule a Call
             </Button>
           </nav>
         )}

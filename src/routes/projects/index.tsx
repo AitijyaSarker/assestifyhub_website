@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,9 @@ import { useCmsStore } from "@/hooks/use-cms-store";
 import { ArrowUpRight, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/projects/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    category: typeof search.category === "string" ? search.category : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Portfolio & Case Studies | Assetify Hub" },
@@ -18,7 +21,24 @@ export const Route = createFileRoute("/projects/")({
 
 function ProjectsIndexPage() {
   const { projects } = useCmsStore();
-  const [filter, setFilter] = useState("All");
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const [filter, setFilter] = useState<string>(search.category || "All");
+
+  useEffect(() => {
+    if (search.category) {
+      setFilter(search.category);
+    }
+  }, [search.category]);
+
+  const handleSelectFilter = (cat: string) => {
+    setFilter(cat);
+    navigate({
+      to: "/projects",
+      search: cat === "All" ? {} : { category: cat },
+      replace: true,
+    });
+  };
 
   const categories = ["All", ...new Set(projects.map((project) => project.category).filter(Boolean))];
   const visibleProjects = projects
@@ -50,7 +70,7 @@ function ProjectsIndexPage() {
             {categories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => setFilter(cat)}
+                onClick={() => handleSelectFilter(cat)}
                 className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   filter === cat
                     ? "bg-primary text-white shadow-md shadow-primary/20"

@@ -1,9 +1,11 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { useCmsStore } from "@/hooks/use-cms-store";
-import { ArrowLeft, ArrowUpRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, CheckCircle2, ShieldCheck, Sparkles, Send } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/projects/$slug")({
   component: SingleProjectPage,
@@ -11,12 +13,62 @@ export const Route = createFileRoute("/projects/$slug")({
 
 function SingleProjectPage() {
   const { slug } = useParams({ from: "/projects/$slug" });
-  const { projects } = useCmsStore();
+  const { projects, store, settings } = useCmsStore();
 
-  const project = projects.find((p) => p.slug === slug && p.isVisible);
+  const project = projects.find((p) => (p.slug === slug || p.id === slug) && p.isVisible);
   const projectImages = project
     ? [...new Set([project.coverImage, ...(project.gallery ?? [])].filter(Boolean))]
     : [];
+
+  const [accessName, setAccessName] = useState("");
+  const [accessEmail, setAccessEmail] = useState("");
+  const [accessPhone, setAccessPhone] = useState("");
+  const [accessCompany, setAccessCompany] = useState("");
+  const [accessMessage, setAccessMessage] = useState("");
+  const [accessSubmitted, setAccessSubmitted] = useState(false);
+  const [accessSubmitting, setAccessSubmitting] = useState(false);
+
+  const handleAccessSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!project || !accessName.trim() || !accessEmail.trim()) {
+      toast.error("Please enter your name and email address.");
+      return;
+    }
+
+    setAccessSubmitting(true);
+    try {
+      store.addProjectAccessRequest(project.id, {
+        name: accessName,
+        email: accessEmail,
+        phone: accessPhone,
+        company: accessCompany,
+        message: accessMessage,
+      });
+
+      try {
+        await fetch(`/api/projects/${project.id}/access`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: accessName,
+            email: accessEmail,
+            phone: accessPhone,
+            company: accessCompany,
+            message: accessMessage,
+          }),
+        });
+      } catch {
+        // offline fallback
+      }
+
+      setAccessSubmitted(true);
+      toast.success("Access request received! Our team will contact you shortly.");
+    } catch {
+      toast.error("Unable to submit request. Please try again.");
+    } finally {
+      setAccessSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -149,20 +201,119 @@ function SingleProjectPage() {
               {project.link ? (
                 <section className="flex items-center rounded-2xl border border-border bg-card p-6">
                   <a href={project.link} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">
-                    Visit project <ArrowUpRight className="ml-1 inline size-4" />
+                    Visit live project <ArrowUpRight className="ml-1 inline size-4" />
                   </a>
                 </section>
               ) : null}
             </div>
           ) : null}
 
+          {/* REQUEST PROJECT ACCESS FORM (UltraBulb IT Feature) */}
+          <div id="request-access" className="mb-16 p-8 rounded-2xl border border-border bg-card">
+            <div className="max-w-2xl">
+              <span className="eyebrow">Enterprise Exploration</span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground mt-1">
+                Request Project Access & Deep Dive
+              </h2>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                Interested in evaluating the architecture, source implementation, or a private walkthrough of {project.title}? Submit your details below.
+              </p>
+            </div>
+
+            {accessSubmitted ? (
+              <div className="mt-6 p-6 rounded-xl bg-accent/40 border border-border flex items-center gap-4">
+                <CheckCircle2 className="size-8 text-primary shrink-0" />
+                <div>
+                  <h4 className="font-bold text-sm text-foreground">Access Request Received</h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Thank you, {accessName}. Our team will review your request and get in touch at {accessEmail} with architecture documentation.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleAccessSubmit} className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label className="field-label">
+                  Full Name <span className="text-destructive">*</span>
+                  <input
+                    type="text"
+                    required
+                    value={accessName}
+                    onChange={(e) => setAccessName(e.target.value)}
+                    placeholder="e.g. Alex Morgan"
+                    className="form-field"
+                  />
+                </label>
+
+                <label className="field-label">
+                  Work Email <span className="text-destructive">*</span>
+                  <input
+                    type="email"
+                    required
+                    value={accessEmail}
+                    onChange={(e) => setAccessEmail(e.target.value)}
+                    placeholder="alex@company.com"
+                    className="form-field"
+                  />
+                </label>
+
+                <label className="field-label">
+                  Phone Number
+                  <input
+                    type="tel"
+                    value={accessPhone}
+                    onChange={(e) => setAccessPhone(e.target.value)}
+                    placeholder="+1 (555) 000-0000"
+                    className="form-field"
+                  />
+                </label>
+
+                <label className="field-label">
+                  Company / Organization
+                  <input
+                    type="text"
+                    value={accessCompany}
+                    onChange={(e) => setAccessCompany(e.target.value)}
+                    placeholder="e.g. Acme Corp"
+                    className="form-field"
+                  />
+                </label>
+
+                <label className="field-label sm:col-span-2">
+                  What would you like to explore?
+                  <textarea
+                    rows={3}
+                    value={accessMessage}
+                    onChange={(e) => setAccessMessage(e.target.value)}
+                    placeholder="Tell us what aspects of this solution you are interested in exploring (e.g. architecture, deployment setup, live demo)..."
+                    className="form-field"
+                  />
+                </label>
+
+                <div className="sm:col-span-2 flex items-center justify-between pt-2">
+                  <span className="text-[11px] text-muted-foreground">
+                    Confidential. We never share your contact details.
+                  </span>
+                  <Button type="submit" variant="brand" disabled={accessSubmitting} className="gap-2">
+                    <Send className="size-4" />
+                    {accessSubmitting ? "Submitting..." : "Request Project Access"}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+
           {/* CTA Band */}
           <div className="contact-band">
             <h2>Want to build an outcome like this?</h2>
             <p>Let's collaborate to engineer your custom software or design system.</p>
-            <Button variant="inverse" size="lg" asChild>
-              <Link to="/book-consultation">Start A Project <ArrowUpRight className="size-4 ml-1" /></Link>
-            </Button>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Button variant="inverse" size="lg" asChild>
+                <Link to="/book-consultation">Start A Project <ArrowUpRight className="size-4 ml-1" /></Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild className="bg-transparent border-white/30 text-white hover:bg-white/10">
+                <Link to="/schedule">Schedule A Call <Sparkles className="size-4 ml-1" /></Link>
+              </Button>
+            </div>
           </div>
           </>
           ) : (

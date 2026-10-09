@@ -14,7 +14,11 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as BookConsultationRouteImport } from './routes/book-consultation'
 import { Route as CareersRouteImport } from './routes/careers'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ProcessRouteImport } from './routes/process'
+import { Route as ReviewRouteImport } from './routes/review'
+import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as TeamRouteImport } from './routes/team'
+import { Route as WhyChooseUsRouteImport } from './routes/why-choose-us'
 import { Route as WhyUsRouteImport } from './routes/why-us'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
@@ -50,9 +54,29 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProcessRoute = ProcessRouteImport.update({
+  id: '/process',
+  path: '/process',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScheduleRoute = ScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WhyChooseUsRoute = WhyChooseUsRouteImport.update({
+  id: '/why-choose-us',
+  path: '/why-choose-us',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WhyUsRoute = WhyUsRouteImport.update({
@@ -107,7 +131,11 @@ export interface FileRoutesByFullPath {
   '/book-consultation': typeof BookConsultationRoute
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
+  '/process': typeof ProcessRoute
+  '/review': typeof ReviewRoute
+  '/schedule': typeof ScheduleRoute
   '/team': typeof TeamRoute
+  '/why-choose-us': typeof WhyChooseUsRoute
   '/why-us': typeof WhyUsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/pages/$slug': typeof PagesSlugRoute
@@ -124,7 +152,11 @@ export interface FileRoutesByTo {
   '/book-consultation': typeof BookConsultationRoute
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
+  '/process': typeof ProcessRoute
+  '/review': typeof ReviewRoute
+  '/schedule': typeof ScheduleRoute
   '/team': typeof TeamRoute
+  '/why-choose-us': typeof WhyChooseUsRoute
   '/why-us': typeof WhyUsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/pages/$slug': typeof PagesSlugRoute
@@ -142,7 +174,11 @@ export interface FileRoutesById {
   '/book-consultation': typeof BookConsultationRoute
   '/careers': typeof CareersRoute
   '/contact': typeof ContactRoute
+  '/process': typeof ProcessRoute
+  '/review': typeof ReviewRoute
+  '/schedule': typeof ScheduleRoute
   '/team': typeof TeamRoute
+  '/why-choose-us': typeof WhyChooseUsRoute
   '/why-us': typeof WhyUsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/pages/$slug': typeof PagesSlugRoute
@@ -161,7 +197,11 @@ export interface FileRouteTypes {
     | '/book-consultation'
     | '/careers'
     | '/contact'
+    | '/process'
+    | '/review'
+    | '/schedule'
     | '/team'
+    | '/why-choose-us'
     | '/why-us'
     | '/blog/$slug'
     | '/pages/$slug'
@@ -178,7 +218,11 @@ export interface FileRouteTypes {
     | '/book-consultation'
     | '/careers'
     | '/contact'
+    | '/process'
+    | '/review'
+    | '/schedule'
     | '/team'
+    | '/why-choose-us'
     | '/why-us'
     | '/blog/$slug'
     | '/pages/$slug'
@@ -195,7 +239,11 @@ export interface FileRouteTypes {
     | '/book-consultation'
     | '/careers'
     | '/contact'
+    | '/process'
+    | '/review'
+    | '/schedule'
     | '/team'
+    | '/why-choose-us'
     | '/why-us'
     | '/blog/$slug'
     | '/pages/$slug'
@@ -213,7 +261,11 @@ export interface RootRouteChildren {
   BookConsultationRoute: typeof BookConsultationRoute
   CareersRoute: typeof CareersRoute
   ContactRoute: typeof ContactRoute
+  ProcessRoute: typeof ProcessRoute
+  ReviewRoute: typeof ReviewRoute
+  ScheduleRoute: typeof ScheduleRoute
   TeamRoute: typeof TeamRoute
+  WhyChooseUsRoute: typeof WhyChooseUsRoute
   WhyUsRoute: typeof WhyUsRoute
   BlogSlugRoute: typeof BlogSlugRoute
   PagesSlugRoute: typeof PagesSlugRoute
@@ -262,11 +314,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/process': {
+      id: '/process'
+      path: '/process'
+      fullPath: '/process'
+      preLoaderRoute: typeof ProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/schedule': {
+      id: '/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof ScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/team': {
       id: '/team'
       path: '/team'
       fullPath: '/team'
       preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/why-choose-us': {
+      id: '/why-choose-us'
+      path: '/why-choose-us'
+      fullPath: '/why-choose-us'
+      preLoaderRoute: typeof WhyChooseUsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/why-us': {
@@ -341,7 +421,11 @@ const rootRouteChildren: RootRouteChildren = {
   BookConsultationRoute: BookConsultationRoute,
   CareersRoute: CareersRoute,
   ContactRoute: ContactRoute,
+  ProcessRoute: ProcessRoute,
+  ReviewRoute: ReviewRoute,
+  ScheduleRoute: ScheduleRoute,
   TeamRoute: TeamRoute,
+  WhyChooseUsRoute: WhyChooseUsRoute,
   WhyUsRoute: WhyUsRoute,
   BlogSlugRoute: BlogSlugRoute,
   PagesSlugRoute: PagesSlugRoute,

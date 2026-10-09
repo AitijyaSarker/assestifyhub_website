@@ -1,366 +1,504 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calendar as CalendarIcon, Clock, User, Building, Mail, Phone, FileText, CheckCircle2, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
+import {
+  Building,
+  Calendar as CalendarIcon,
+  CheckCircle2,
+  Clock,
+  Gift,
+  LoaderCircle,
+  Mail,
+  MessageCircle,
+  Phone,
+  ShieldCheck,
+  User,
+} from "lucide-react";
+import { format, isBefore, isWeekend, startOfDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useCmsStore } from "@/hooks/use-cms-store";
-import { format, isWeekend, isBefore, startOfDay } from "date-fns";
 
-const budgetRanges = [
-  "Under $10,000",
-  "$10,000 - $25,000",
-  "$25,000 - $50,000",
-  "$50,000 - $100,000",
-  "$100,000+"
+const topics = [
+  "New project enquiry",
+  "Partnership / collaboration",
+  "Career opportunity",
+  "Technical consultation",
+  "General question",
 ];
 
+interface BookingRecord {
+  id: string;
+  bookingDate: string;
+  timeSlot: string;
+  status: string;
+}
+
 export function BookConsultationForm() {
-  const { timeSlots, settings } = useCmsStore();
+  const { timeSlots } = useCmsStore();
   const availableTimeSlots = useMemo(
     () => timeSlots.filter((slot) => slot.isAvailable).sort((a, b) => a.order - b.order),
     [timeSlots],
   );
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    while (isWeekend(tomorrow)) {
-      tomorrow.setDate(tomorrow.getDate() + 1);
-    }
-    return tomorrow;
+    const nextBusinessDay = new Date();
+    nextBusinessDay.setDate(nextBusinessDay.getDate() + 1);
+    while (isWeekend(nextBusinessDay)) nextBusinessDay.setDate(nextBusinessDay.getDate() + 1);
+    return nextBusinessDay;
   });
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(() => availableTimeSlots[0]?.label ?? "");
-  useEffect(() => {
-    if (!availableTimeSlots.some((slot) => slot.label === selectedTimeSlot)) {
-      setSelectedTimeSlot(availableTimeSlots[0]?.label ?? "");
-    }
-  }, [availableTimeSlots, selectedTimeSlot]);
-
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
+  const [availabilityRefresh, setAvailabilityRefresh] = useState(0);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [availabilityLoading, setAvailabilityLoading] = useState(true);
+  const [availabilityError, setAvailabilityError] = useState("");
+  const [bookingError, setBookingError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [booking, setBooking] = useState<BookingRecord | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     company: "",
-    serviceInterest: "Engineering & Design",
-    budgetRange: "$25,000 - $50,000",
-    projectBrief: ""
+    topic: topics[0] ?? "",
+    message: "",
   });
 
-  const [submittedBooking, setSubmittedBooking] = useState<{
-    bookingDate: string;
-    timeSlot: string;
-  } | null>(null);
+  const selectedDateKey = selectedDate ? format(selectedDate, "yyyy-MM-dd") : "";
 
-  // Disable past dates & weekends
-  const isDateDisabled = (date: Date) => {
-    return isBefore(date, startOfDay(new Date())) || isWeekend(date);
+  useEffect(() => {
+    if (!selectedDateKey) return;
+    const controller = new AbortController();
+
+    const loadAvailability = async () => {
+      setAvailabilityLoading(true);
+      setAvailabilityError("");
+      setBookedSlots([]);
+      try {
+        const response = await fetch(
+          `/api/schedule/availability?date=${encodeURIComponent(selectedDateKey)}`,
+          { signal: controller.signal },
+        );
+        const result = (await response.json()) as {
+          success?: boolean;
+          data?: { bookedSlots?: string[] };
+          error?: string;
+        };
+        if (!response.ok || !result.success || !Array.isArray(result.data?.bookedSlots)) {
+          throw new Error(result.error || "Could not check time availability.");
+        }
+        setBookedSlots(result.data.bookedSlots);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setAvailabilityError(
+          error instanceof Error ? error.message : "Could not check time availability.",
+        );
+      } finally {
+        if (!controller.signal.aborted) setAvailabilityLoading(false);
+      }
+    };
+
+    void loadAvailability();
+    return () => controller.abort();
+  }, [selectedDateKey, availabilityRefresh]);
+
+  useEffect(() => {
+    if (!selectedDateKey) return;
+    const intervalId = window.setInterval(() => {
+      setAvailabilityRefresh((refresh) => refresh + 1);
+    }, 15_000);
+    return () => window.clearInterval(intervalId);
+  }, [selectedDateKey]);
+
+  useEffect(() => {
+    if (
+      !availableTimeSlots.some(
+        (slot) => slot.label === selectedTimeSlot && !bookedSlots.includes(slot.label),
+      )
+    ) {
+      setSelectedTimeSlot(
+        availableTimeSlots.find((slot) => !bookedSlots.includes(slot.label))?.label ?? "",
+      );
+    }
+  }, [availableTimeSlots, bookedSlots, selectedTimeSlot]);
+
+  const isDateDisabled = (date: Date) => isBefore(date, startOfDay(new Date())) || isWeekend(date);
+
+  const handleInputChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedDateKey || !selectedTimeSlot || availabilityError || availabilityLoading) return;
+
+    setSubmitting(true);
+    setBookingError("");
+    try {
+      const response = await fetch("/api/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.company,
+          topic: formData.topic,
+          date: selectedDateKey,
+          timeSlot: selectedTimeSlot,
+          message: formData.message,
+        }),
+      });
+      const result = (await response.json()) as {
+        success?: boolean;
+        data?: BookingRecord;
+        error?: string;
+      };
+      if (!response.ok || !result.success || !result.data?.id) {
+        if (response.status === 409) {
+          setBookedSlots((current) => [...new Set([...current, selectedTimeSlot])]);
+          setSelectedTimeSlot("");
+        }
+        throw new Error(result.error || "Your booking request could not be saved.");
+      }
+      setBooking(result.data);
+      setBookedSlots((current) => [...new Set([...current, selectedTimeSlot])]);
+    } catch (error) {
+      setBookingError(
+        error instanceof Error
+          ? error.message
+          : "Your booking request could not be saved. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedDate || !selectedTimeSlot) return;
-
-    const formattedDate = format(selectedDate, "yyyy-MM-dd");
-
-    setSubmittedBooking({
-      bookingDate: formattedDate,
-      timeSlot: selectedTimeSlot
+  const resetBookingForm = () => {
+    setBooking(null);
+    setBookingError("");
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      company: "",
+      topic: topics[0] ?? "",
+      message: "",
     });
-
-    const subject = `Consultation enquiry: ${formData.name}`;
-    const body = `Hello Assetify Hub,\n\nI would like to enquire about a consultation.\n\nPreferred date: ${formattedDate}\nPreferred time: ${selectedTimeSlot}\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nCompany: ${formData.company}\nInterest: ${formData.serviceInterest}\nBudget range: ${formData.budgetRange}\n\nProject brief:\n${formData.projectBrief}`;
-    
-    window.location.href = `mailto:${settings.contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-    setStep(4);
+    setSelectedTimeSlot("");
   };
+
+  if (booking) {
+    return (
+      <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-emerald-200 bg-card shadow-xl dark:border-emerald-900">
+        <div className="h-1.5 bg-gradient-to-r from-primary to-emerald-400" />
+        <div className="space-y-6 px-6 py-10 text-center sm:px-10">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+            <CheckCircle2 className="size-9" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Booking request received</h2>
+            <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
+              Your requested time is being held while our team reviews it. We’ll contact you at{" "}
+              <strong className="text-foreground">{formData.email}</strong> to confirm the
+              appointment.
+            </p>
+          </div>
+          <div className="grid gap-3 text-left sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <CalendarIcon className="size-3.5" /> Date
+              </div>
+              <div className="text-sm font-semibold text-foreground">
+                {format(new Date(`${booking.bookingDate}T00:00:00`), "EEEE, MMMM d, yyyy")}
+              </div>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <Clock className="size-3.5" /> Time
+              </div>
+              <div className="text-sm font-semibold text-foreground">{booking.timeSlot}</div>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <div className="mb-1 text-xs text-muted-foreground">Status</div>
+              <div className="text-sm font-semibold capitalize text-amber-700 dark:text-amber-300">
+                {booking.status}
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Reference: {booking.id}</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button type="button" variant="outline" onClick={resetBookingForm}>
+              Book Another Call
+            </Button>
+            <Button variant="brand" asChild>
+              <a href="/">Back to Home</a>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto bg-card border border-border rounded-2xl p-6 sm:p-10 shadow-xl">
-      {/* Progress Steps Header */}
-      <div className="flex items-center justify-between mb-8 pb-6 border-b border-border">
-        {[
-          { number: 1, label: "Select Date", icon: CalendarIcon },
-          { number: 2, label: "Time Slot", icon: Clock },
-          { number: 3, label: "Client Details", icon: User }
-        ].map((s) => {
-          const Icon = s.icon;
-          const isActive = step === s.number;
-          const isDone = step > s.number;
-          return (
-            <div key={s.number} className="flex items-center gap-2">
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${
-                  isDone
-                    ? "bg-primary text-white"
-                    : isActive
-                    ? "bg-primary text-white shadow-md shadow-primary/30"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {isDone ? <CheckCircle2 className="size-5" /> : s.number}
+    <div className="mx-auto max-w-6xl space-y-5">
+      <form
+        onSubmit={handleSubmit}
+        className="grid overflow-hidden rounded-2xl border border-border bg-card shadow-xl lg:grid-cols-[0.9fr_1.1fr]"
+      >
+        <section className="border-b border-border p-5 sm:p-8 lg:border-b-0 lg:border-r">
+          <h2 className="mb-5 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <span className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+              1
+            </span>
+            Pick a date
+          </h2>
+          <div className="flex justify-center rounded-xl border border-border bg-background p-3">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(date) => {
+                setSelectedDate(date);
+                setSelectedTimeSlot("");
+                setBookingError("");
+              }}
+              disabled={isDateDisabled}
+              className="rounded-md"
+            />
+          </div>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            Weekends and past dates are unavailable.
+          </p>
+          {selectedDate ? (
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3">
+              <div className="text-xs text-muted-foreground">Selected date</div>
+              <div className="text-sm font-semibold text-foreground">
+                {format(selectedDate, "EEEE, MMMM d, yyyy")}
               </div>
-              <span className={`text-xs font-semibold hidden sm:inline ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
-                {s.label}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="space-y-6 p-5 sm:p-8">
+          <div>
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <span className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                2
               </span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* STEP 1: Date Picker Calendar */}
-      {step === 1 && (
-        <div className="space-y-6">
-          <div className="text-center max-w-md mx-auto mb-6">
-            <h3 className="text-xl font-bold text-foreground">Step 1: Choose Consultation Date</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Choose a preferred weekday for your consultation enquiry. The time is a preference only; it is not a confirmed booking.
-            </p>
-          </div>
-
-          <div className="flex justify-center">
-            <div className="p-4 border border-border rounded-xl bg-background shadow-inner">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(d) => d && setSelectedDate(d)}
-                disabled={isDateDisabled}
-                className="rounded-md"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center pt-4 border-t border-border">
-            <div className="text-xs text-muted-foreground">
-              Selected Date: <strong className="text-foreground font-semibold">{selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "None"}</strong>
-            </div>
-            <Button variant="brand" onClick={() => setStep(2)} disabled={!selectedDate}>
-              Next: Select Time Slot <ArrowRight className="size-4 ml-1" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 2: Time Slot Selector */}
-      {step === 2 && (
-        <div className="space-y-6">
-          <div className="text-center max-w-md mx-auto mb-6">
-            <h3 className="text-xl font-bold text-foreground">Step 2: Choose Available Time Slot</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Preferred times for <strong className="text-primary">{selectedDate ? format(selectedDate, "MMMM d, yyyy") : ""}</strong>.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-w-lg mx-auto">
-            {availableTimeSlots.map((slot) => {
-              const isSelected = selectedTimeSlot === slot.label;
-              return (
-                <button
-                  key={slot.id}
-                  type="button"
-                  onClick={() => setSelectedTimeSlot(slot.label)}
-                  className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    isSelected
-                      ? "bg-primary text-white border-primary shadow-md shadow-primary/20 scale-105"
-                      : "bg-background border-border text-foreground hover:border-primary/50"
-                  }`}
-                >
-                  <Clock className="size-3.5" />
-                  {slot.label}
-                </button>
-              );
-            })}
-            {availableTimeSlots.length === 0 ? (
-              <p className="col-span-full rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
-                There are no consultation times available right now. Please contact us by email.
+              Choose an available time
+            </h2>
+            {availabilityLoading ? (
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <LoaderCircle className="size-4 animate-spin" /> Checking available times…
               </p>
-            ) : null}
+            ) : availabilityError ? (
+              <div className="space-y-2" role="alert">
+                <p className="text-sm text-destructive">{availabilityError}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAvailabilityRefresh((refresh) => refresh + 1)}
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {availableTimeSlots.map((slot) => {
+                  const isBooked = bookedSlots.includes(slot.label);
+                  const isSelected = selectedTimeSlot === slot.label;
+                  return (
+                    <button
+                      key={slot.id}
+                      type="button"
+                      disabled={isBooked}
+                      aria-pressed={isSelected}
+                      onClick={() => {
+                        setSelectedTimeSlot(slot.label);
+                        setBookingError("");
+                      }}
+                      className={`rounded-lg border px-3 py-2.5 text-xs font-medium transition-colors ${
+                        isBooked
+                          ? "cursor-not-allowed border-border bg-muted text-muted-foreground line-through opacity-60"
+                          : isSelected
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-background text-foreground hover:border-primary/60"
+                      }`}
+                    >
+                      {slot.label}
+                      {isBooked ? " · Booked" : ""}
+                    </button>
+                  );
+                })}
+                {availableTimeSlots.length === 0 ? (
+                  <p className="col-span-full rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                    There are no consultation times available right now. Please contact us.
+                  </p>
+                ) : null}
+                {availableTimeSlots.length > 0 &&
+                availableTimeSlots.every((slot) => bookedSlots.includes(slot.label)) ? (
+                  <p className="col-span-full text-sm text-muted-foreground">
+                    All times are booked for this day. Please choose another date.
+                  </p>
+                ) : null}
+              </div>
+            )}
           </div>
 
-          <div className="flex justify-between items-center pt-6 border-t border-border">
-            <Button variant="clean" onClick={() => setStep(1)}>
-              <ArrowLeft className="size-4 mr-1" /> Back to Date
-            </Button>
-            <Button variant="brand" onClick={() => setStep(3)} disabled={!selectedTimeSlot}>
-              Next: Your Contact Details <ArrowRight className="size-4 ml-1" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 3: Client Details Form */}
-      {step === 3 && (
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="text-center max-w-md mx-auto mb-6">
-            <h3 className="text-xl font-bold text-foreground">Step 3: Tell Us About Your Project</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Booking scheduled for <strong className="text-primary">{selectedDate ? format(selectedDate, "MMM d, yyyy") : ""} at {selectedTimeSlot}</strong>.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
+          <div className="border-t border-border pt-5">
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
+              <span className="flex size-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                3
+              </span>
+              Your details
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2">
               <label className="field-label">
-                Full Name *
+                <span className="flex items-center gap-1">
+                  <User className="size-3.5" /> Name <span className="text-destructive">*</span>
+                </span>
                 <input
                   required
-                  type="text"
                   name="name"
+                  autoComplete="name"
+                  maxLength={120}
                   value={formData.name}
                   onChange={handleInputChange}
-                  placeholder="e.g. Sarah Jenkins"
+                  placeholder="Your name"
                   className="form-field"
                 />
               </label>
-            </div>
-
-            <div>
               <label className="field-label">
-                Work Email Address *
+                <span className="flex items-center gap-1">
+                  <Mail className="size-3.5" /> Email <span className="text-destructive">*</span>
+                </span>
                 <input
                   required
                   type="email"
                   name="email"
+                  autoComplete="email"
+                  maxLength={254}
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="sarah@company.com"
+                  placeholder="you@company.com"
                   className="form-field"
                 />
               </label>
-            </div>
-
-            <div>
               <label className="field-label">
-                Phone Number
+                <span className="flex items-center gap-1">
+                  <Phone className="size-3.5" /> Phone <span className="text-destructive">*</span>
+                </span>
                 <input
+                  required
                   type="tel"
                   name="phone"
+                  autoComplete="tel"
+                  maxLength={40}
                   value={formData.phone}
                   onChange={handleInputChange}
-                  placeholder="+1 (555) 019-2834"
+                  placeholder="+1 555 000 0000"
                   className="form-field"
                 />
               </label>
-            </div>
-
-            <div>
               <label className="field-label">
-                Company / Organization
+                <span className="flex items-center gap-1">
+                  <Building className="size-3.5" /> Company{" "}
+                  <span className="text-muted-foreground">(optional)</span>
+                </span>
                 <input
-                  type="text"
                   name="company"
+                  autoComplete="organization"
+                  maxLength={160}
                   value={formData.company}
                   onChange={handleInputChange}
-                  placeholder="e.g. Acme Financial Technologies"
+                  placeholder="Company or organization"
                   className="form-field"
                 />
               </label>
-            </div>
-
-            <div>
-              <label className="field-label">
-                Primary Area of Interest
+              <label className="field-label sm:col-span-2">
+                Topic <span className="text-destructive">*</span>
                 <select
-                  name="serviceInterest"
-                  value={formData.serviceInterest}
+                  required
+                  name="topic"
+                  value={formData.topic}
                   onChange={handleInputChange}
                   className="form-field"
                 >
-                  <option>Engineering & Design</option>
-                  <option>Brand & Digital Growth</option>
-                  <option>Infrastructure & Security</option>
-                  <option>Custom SaaS & Microservices</option>
-                  <option>Security Audit & Zero-Trust</option>
-                </select>
-              </label>
-            </div>
-
-            <div>
-              <label className="field-label">
-                Estimated Project Budget
-                <select
-                  name="budgetRange"
-                  value={formData.budgetRange}
-                  onChange={handleInputChange}
-                  className="form-field"
-                >
-                  {budgetRanges.map((b) => (
-                    <option key={b}>{b}</option>
+                  {topics.map((topic) => (
+                    <option key={topic}>{topic}</option>
                   ))}
                 </select>
               </label>
-            </div>
-
-            <div className="sm:col-span-2">
-              <label className="field-label">
-                Project Summary & Objectives *
+              <label className="field-label sm:col-span-2">
+                Message <span className="text-muted-foreground">(optional)</span>
                 <textarea
-                  required
-                  rows={4}
-                  name="projectBrief"
-                  value={formData.projectBrief}
+                  name="message"
+                  rows={3}
+                  maxLength={3000}
+                  value={formData.message}
                   onChange={handleInputChange}
-                  placeholder="Briefly describe what you would like to build or solve..."
+                  placeholder="Tell us a little about what you’d like to discuss."
                   className="form-field"
                 />
               </label>
             </div>
           </div>
 
-          <div className="flex justify-between items-center pt-6 border-t border-border">
-            <Button type="button" variant="clean" onClick={() => setStep(2)}>
-              <ArrowLeft className="size-4 mr-1" /> Back to Time
-            </Button>
-            <Button type="submit" variant="brand">
-              Prepare Email Enquiry <Sparkles className="size-4 ml-1" />
-            </Button>
-          </div>
-        </form>
-      )}
-
-      {/* STEP 4: Success / Confirmation Screen */}
-      {step === 4 && submittedBooking && (
-        <div className="text-center py-8 space-y-6 animate-in zoom-in-95 duration-300">
-          <div className="w-16 h-16 rounded-full bg-accent text-primary flex items-center justify-center mx-auto shadow-lg shadow-primary/20">
-            <CheckCircle2 className="size-10" />
-          </div>
-
-          <div>
-            <h3 className="text-2xl font-bold text-foreground">Your enquiry draft is ready</h3>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto mt-2">
-              Your email app should open with your preferred date and details. Nothing has been booked or sent yet; send the draft to complete your enquiry.
+          {bookingError ? (
+            <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+              {bookingError}
             </p>
-          </div>
+          ) : null}
+          <Button
+            type="submit"
+            variant="brand"
+            className="w-full"
+            disabled={
+              submitting ||
+              availabilityLoading ||
+              Boolean(availabilityError) ||
+              !selectedDate ||
+              !selectedTimeSlot
+            }
+          >
+            {submitting ? (
+              <LoaderCircle className="mr-2 size-4 animate-spin" />
+            ) : (
+              <CalendarIcon className="mr-2 size-4" />
+            )}
+            {submitting ? "Submitting request…" : "Request this booking"}
+          </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            Your request is pending until our team confirms it. We’ll use your details only to
+            respond to this request.
+          </p>
+        </section>
+      </form>
 
-          <div className="max-w-md mx-auto bg-muted/40 border border-border rounded-xl p-5 text-left space-y-2 text-xs">
-            <div className="flex justify-between border-b border-border/60 pb-2">
-              <span className="text-muted-foreground">Date & Time:</span>
-              <span className="font-semibold text-foreground">{submittedBooking.bookingDate} at {submittedBooking.timeSlot}</span>
-            </div>
-            <div className="flex justify-between border-b border-border/60 pb-2">
-              <span className="text-muted-foreground">Client Name:</span>
-              <span className="font-semibold text-foreground">{formData.name} ({formData.company})</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Email draft addressed to:</span>
-              <span className="font-semibold text-primary">{settings.contactEmail}</span>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          {
+            icon: MessageCircle,
+            title: "Quick reply",
+            copy: "We aim to reply within one business day.",
+          },
+          { icon: Gift, title: "Free consultation", copy: "A 30-minute call with no obligation." },
+          {
+            icon: ShieldCheck,
+            title: "Secure and private",
+            copy: "Your booking details are kept private.",
+          },
+        ].map(({ icon: Icon, title, copy }) => (
+          <div key={title} className="flex gap-3 rounded-xl border border-border bg-card p-4">
+            <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+              <p className="mt-1 text-xs text-muted-foreground">{copy}</p>
             </div>
           </div>
-
-          <div className="pt-4 flex justify-center gap-3">
-            <Button variant="clean" onClick={() => setStep(1)}>
-              Book Another Session
-            </Button>
-            <Button variant="brand" asChild>
-              <a href="/">Return to Home Page</a>
-            </Button>
-          </div>
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
 }

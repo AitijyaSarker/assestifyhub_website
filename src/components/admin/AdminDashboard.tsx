@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCmsStore } from "@/hooks/use-cms-store";
 import { useAuth } from "@/hooks/use-auth";
+import { useTheme } from "@/hooks/use-theme";
 import { 
   LayoutDashboard, 
   Settings, 
@@ -33,26 +34,64 @@ import {
   Award,
   Clock,
   Star,
-  MessageSquare
+  MessageSquare,
+  Tags,
+  Moon,
+  Sun,
+  Bell,
+  Pencil,
+  Upload,
+  ImagePlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ReferenceAdminModules, type AdminModuleTab } from "@/components/admin/ReferenceAdminModules";
 import { ImageAssetManager, ImageAssetPicker } from "@/components/admin/ImageAssetPicker";
 import type { ConsultationLead, Project } from "@/lib/cms-store";
 
 const isReferenceAdminTab = (tab: string): tab is AdminModuleTab =>
-  ["site-content", "vacancies", "gallery", "awards", "time-slots", "reviews", "messages"].includes(tab);
+  ["site-content", "service-categories", "vacancies", "gallery", "awards", "time-slots", "reviews", "messages"].includes(tab);
+
+interface NavItem {
+  id: string;
+  label: string;
+  icon: typeof Award;
+  group: string;
+  badge?: number;
+}
+
+const buildNavItems = (unreadMessages: number, pendingCalls: number, pendingReviews: number): NavItem[] => [
+  { id: "overview", label: "Overview", icon: LayoutDashboard, group: "Main" },
+  { id: "site-content", label: "Site Content", icon: FileText, group: "Main" },
+  { id: "products", label: "Products", icon: Package, group: "Collections" },
+  { id: "service-categories", label: "Service Categories", icon: Tags, group: "Collections" },
+  { id: "vacancies", label: "Vacancies", icon: Briefcase, group: "Collections" },
+  { id: "gallery", label: "Gallery", icon: ImageIcon, group: "Collections" },
+  { id: "awards", label: "Awards", icon: Award, group: "Collections" },
+  { id: "time-slots", label: "Time Slots", icon: Clock, group: "Collections" },
+  { id: "reviews", label: "Reviews", icon: Star, group: "Submissions", badge: pendingReviews },
+  { id: "calls", label: "Scheduled Calls", icon: CalendarCheck, group: "Submissions", badge: pendingCalls },
+  { id: "messages", label: "Messages", icon: MessageSquare, group: "Submissions", badge: unreadMessages },
+  { id: "tech", label: "Technology Stack", icon: Cpu, group: "Advanced" },
+  { id: "portfolio", label: "Portfolio / Cases", icon: FolderKanban, group: "Advanced" },
+  { id: "blog", label: "Blog & News", icon: BookOpen, group: "Advanced" },
+  { id: "layout", label: "Homepage Builder", icon: Layers, group: "Advanced" },
+  { id: "settings", label: "Site Settings", icon: Settings, group: "Advanced" },
+  { id: "media", label: "Media Library", icon: ImageIcon, group: "Advanced" },
+  { id: "audit", label: "Users & Audit Log", icon: Users, group: "Advanced" },
+];
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "site-content" | "settings" | "layout" | "leads" | "services" | "tech" | "portfolio" | "blog" | "nav" | "media" | "audit" | "products" | "vacancies" | "gallery" | "awards" | "time-slots" | "reviews" | "calls" | "messages"
+    "overview" | "site-content" | "settings" | "layout" | "leads" | "services" | "tech" | "portfolio" | "blog" | "nav" | "media" | "audit" | "products" | "service-categories" | "vacancies" | "gallery" | "awards" | "time-slots" | "reviews" | "calls" | "messages"
   >("overview");
 
   const {
     settings,
     siteContent,
     services,
+    serviceCategories,
     techStack,
     projects,
     blogPosts,
@@ -72,7 +111,10 @@ export function AdminDashboard() {
   } = useCmsStore();
 
   const { session, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const imageIsReferenced = (url: string) =>
     Boolean(url) && (
       settings.logoUrlLight === url ||
@@ -95,6 +137,110 @@ export function AdminDashboard() {
 
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [projectForm, setProjectForm] = useState({
+    title: "",
+    category: "",
+    categoryId: "",
+    coverImage: "",
+    galleryText: "",
+    summary: "",
+    techStackText: "",
+    review: "",
+    awards: "",
+    accessFeaturesText: "",
+    serviceOwnersText: "",
+    tagsText: "",
+    link: "",
+    order: 0,
+    isFeatured: false,
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const openNewProductModal = () => {
+    setEditingProject(null);
+    setProjectForm({
+      title: "",
+      category: serviceCategories.find((c) => c.active)?.name || "",
+      categoryId: serviceCategories.find((c) => c.active)?.id || "",
+      coverImage: "",
+      galleryText: "",
+      summary: "",
+      techStackText: "",
+      review: "",
+      awards: "",
+      accessFeaturesText: "",
+      serviceOwnersText: "",
+      tagsText: "",
+      link: "",
+      order: 0,
+      isFeatured: false,
+    });
+    setProjectModalOpen(true);
+  };
+
+  const openEditProductModal = (p: Project) => {
+    setEditingProject(p);
+    setProjectForm({
+      title: p.title || "",
+      category: p.category || "",
+      categoryId: p.categoryId || "",
+      coverImage: p.coverImage || "",
+      galleryText: (p.gallery || []).join("\n"),
+      summary: p.summary || "",
+      techStackText: (p.techTags || []).join(", "),
+      review: p.review || "",
+      awards: p.awards || "",
+      accessFeaturesText: (p.accessFeatures || []).join("\n"),
+      serviceOwnersText: (p.serviceOwners || []).join("\n"),
+      tagsText: (p.tags || []).join(", "),
+      link: p.link || "",
+      order: p.order ?? 0,
+      isFeatured: Boolean(p.isFeatured),
+    });
+    setProjectModalOpen(true);
+  };
+
+  const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: {
+          Authorization: session?.token ? `Bearer ${session.token}` : "",
+        },
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          setProjectForm((f) => ({ ...f, coverImage: data.url }));
+          return;
+        }
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setProjectForm((f) => ({ ...f, coverImage: String(event.target.result) }));
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setProjectForm((f) => ({ ...f, coverImage: String(event.target.result) }));
+        }
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const [blogModalOpen, setBlogModalOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<any>(null);
@@ -110,11 +256,15 @@ export function AdminDashboard() {
     budgetRange: "",
     projectBrief: "",
   });
+  const validLeads = leads.filter(
+    (lead): lead is ConsultationLead =>
+      Boolean(lead) && typeof lead === "object" && typeof lead.id === "string",
+  );
 
   // CSV Export Helper for Consultation Leads
   const exportLeadsCSV = () => {
     const headers = ["ID,Date,TimeSlot,Name,Email,Phone,Company,Interest,Budget,Status,CreatedAt"];
-    const rows = leads.map((l) =>
+    const rows = validLeads.map((l) =>
       `"${l.id}","${l.bookingDate}","${l.timeSlot}","${l.name}","${l.email}","${l.phone}","${l.company}","${l.serviceInterest}","${l.budgetRange}","${l.status}","${l.createdAt}"`
     );
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
@@ -128,11 +278,34 @@ export function AdminDashboard() {
     store.logAction(session?.email || "admin", "EXPORT_LEADS_CSV", "Exported consultation leads to CSV");
   };
 
+  const unreadMessages = messages.filter((m) => !m.read).length;
+  const pendingCalls = validLeads.filter((lead) =>
+    ["New", "pending", "Contacted"].includes(lead.status),
+  ).length;
+  const pendingReviews = reviews.filter((r) => !r.approved).length;
+  const navItems = buildNavItems(unreadMessages, pendingCalls, pendingReviews);
+  const navGroups = ["Main", "Collections", "Submissions", "Advanced"];
+
+  useEffect(() => {
+    if (activeTab !== "calls" && activeTab !== "messages") return;
+
+    const refreshSubmissions = () => {
+      void store.refreshRemoteContent();
+    };
+    refreshSubmissions();
+    const interval = window.setInterval(refreshSubmissions, 15000);
+    window.addEventListener("focus", refreshSubmissions);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshSubmissions);
+    };
+  }, [activeTab, store]);
+
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
       {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-card border-r border-border p-4 flex flex-col justify-between shrink-0">
-        <div>
+      <aside className="w-full md:w-64 bg-card border-r border-border flex flex-col justify-between shrink-0 max-h-screen md:sticky md:top-0">
+        <div className="flex-1 overflow-y-auto p-4">
           {/* Admin Header */}
           <div className="flex items-center justify-between pb-4 mb-4 border-b border-border">
             <div className="flex items-center gap-2 font-bold text-lg text-foreground">
@@ -141,70 +314,120 @@ export function AdminDashboard() {
               </span>
               Assetify <span className="text-primary">CMS</span>
             </div>
-            <a href="/" target="_blank" className="text-muted-foreground hover:text-primary p-1" title="View Public Site">
-              <ExternalLink className="size-4" />
-            </a>
+            <div className="flex items-center gap-1">
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+              >
+                {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+              </button>
+              {/* Notification Bell */}
+              <div className="relative">
+                <button
+                  onClick={() => setNotifOpen((v) => !v)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer relative"
+                  aria-label={`Notifications${unreadMessages ? `, ${unreadMessages} unread` : ""}`}
+                >
+                  <Bell className="size-4" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white">
+                      {unreadMessages > 9 ? "9+" : unreadMessages}
+                    </span>
+                  )}
+                </button>
+                {notifOpen && (
+                  <div className="absolute left-0 top-9 z-50 w-72 rounded-xl border border-border/70 bg-popover p-3 text-popover-foreground shadow-xl">
+                    <div className="mb-2 flex items-center justify-between px-1">
+                      <span className="text-sm font-semibold">Notifications</span>
+                      <span className="text-xs text-muted-foreground">{unreadMessages} unread</span>
+                    </div>
+                    <div className="max-h-56 space-y-1 overflow-y-auto">
+                      {messages.slice(0, 5).map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          className="w-full rounded-lg p-2 text-left transition-colors hover:bg-accent cursor-pointer"
+                          onClick={() => { setNotifOpen(false); setActiveTab("messages"); }}
+                        >
+                          <div className="flex items-start gap-2">
+                            {!m.read ? <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" /> : <span className="mt-1.5 size-2 shrink-0" />}
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-medium">{m.subject || "No subject"}</span>
+                              <span className="block truncate text-xs text-muted-foreground">{m.name} · {new Date(m.createdAt).toLocaleDateString()}</span>
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                      {messages.length === 0 && <p className="px-2 py-4 text-center text-xs text-muted-foreground">No notifications yet.</p>}
+                    </div>
+                    <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => { setNotifOpen(false); setActiveTab("messages"); }}>View all messages</Button>
+                  </div>
+                )}
+              </div>
+              {/* View Site */}
+              <a href="/" target="_blank" className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors" title="View Public Site">
+                <ExternalLink className="size-4" />
+              </a>
+            </div>
           </div>
 
           {/* User Session Info */}
-          <div className="mb-6 p-3 rounded-lg bg-accent/50 border border-border/60 flex items-center justify-between">
+          <div className="mb-4 p-3 rounded-lg bg-accent/50 border border-border/60 flex items-center justify-between">
             <div className="min-w-0">
-              <div className="font-semibold text-xs text-foreground truncate">{session?.name}</div>
+              <div className="font-semibold text-xs text-foreground truncate">{session?.name || session?.email}</div>
               <div className="text-[10px] font-bold text-primary uppercase tracking-wider">{session?.role}</div>
             </div>
           </div>
 
-          {/* Nav Items List */}
-          <nav className="space-y-1">
-            {[
-              { id: "overview", label: "Overview", icon: LayoutDashboard },
-              { id: "site-content", label: "Site Content", icon: FileText },
-              { id: "products", label: "Products", icon: Package },
-              { id: "services", label: "Service Categories", icon: Code2 },
-              { id: "vacancies", label: "Vacancies", icon: Briefcase },
-              { id: "gallery", label: "Gallery", icon: ImageIcon },
-              { id: "awards", label: "Awards", icon: Award },
-              { id: "time-slots", label: "Time Slots", icon: Clock },
-              { id: "reviews", label: "Reviews", icon: Star },
-              { id: "calls", label: "Scheduled Calls", icon: CalendarCheck, badge: leads.filter(l => l.status === "New").length },
-              { id: "messages", label: "Messages", icon: MessageSquare },
-              { id: "tech", label: "Technology Stack", icon: Cpu },
-              { id: "portfolio", label: "Portfolio / Cases", icon: FolderKanban },
-              { id: "blog", label: "Blog & News", icon: BookOpen },
-              { id: "layout", label: "Homepage Builder", icon: Layers },
-              { id: "settings", label: "Site Settings", icon: Settings },
-              { id: "media", label: "Media Library", icon: ImageIcon },
-              { id: "audit", label: "Users & Audit Log", icon: Users }
-            ].map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
+          {/* Grouped Nav Items */}
+          <nav className="space-y-4">
+            {navGroups.map((group) => {
+              const items = navItems.filter((item) => item.group === group);
+              if (items.length === 0) return null;
               return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id as typeof activeTab)}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-primary text-white shadow-md shadow-primary/20"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Icon className="size-4" />
-                    <span>{item.label}</span>
+                <div key={group}>
+                  <div className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+                    {group}
                   </div>
-                  {Boolean(item.badge) && item.badge! > 0 && (
-                    <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
+                  <div className="space-y-0.5">
+                    {items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeTab === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => setActiveTab(item.id as typeof activeTab)}
+                          className={`w-full flex items-center justify-between p-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-primary text-white shadow-md shadow-primary/20"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Icon className="size-4" />
+                            <span>{item.label}</span>
+                          </div>
+                          {item.badge != null && item.badge > 0 && (
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              isActive ? "bg-white/20 text-white" : "bg-amber-500 text-white"
+                            }`}>
+                              {item.badge}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </nav>
         </div>
 
         {/* Sidebar Footer */}
-        <div className="pt-4 border-t border-border mt-6">
+        <div className="p-4 border-t border-border">
           <Button variant="ghost" size="sm" onClick={logout} className="w-full justify-start text-xs text-red-500 hover:bg-red-50 hover:text-red-600">
             <LogOut className="size-4 mr-2" /> Logout Session
           </Button>
@@ -222,64 +445,97 @@ export function AdminDashboard() {
         {activeTab === "overview" && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">CMS Control Dashboard</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Full visibility control and content management system for <strong className="text-primary">Assetify Hub</strong>.
+              <h2 className="text-2xl font-bold tracking-tight text-foreground">Overview</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                A snapshot of your website content and incoming submissions.
               </p>
             </div>
 
-            {/* Quick Metrics Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <div className="text-xs font-semibold text-muted-foreground uppercase">Scheduled Calls</div>
-                <div className="text-2xl font-extrabold text-foreground mt-2">{leads.length}</div>
-                <div className="text-[11px] text-emerald-600 font-medium mt-1">{leads.filter(l => l.status === "New").length} New Requests</div>
-              </div>
+            {/* Primary Stats Grid — matching UltraBulb IT overview */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[
+                { key: "products", label: "Products", value: projects.length, icon: Package, color: "text-primary bg-primary/10", tab: "products" },
+                { key: "vacancies", label: "Vacancies", value: jobs.length, icon: Briefcase, color: "text-foreground bg-accent", tab: "vacancies" },
+                { key: "hiring", label: "Actively Hiring", value: jobs.filter((j) => j.isVisible).length, icon: Briefcase, color: "text-emerald-600 bg-emerald-500/10", tab: "vacancies" },
+                { key: "pendingReviews", label: "Pending Reviews", value: pendingReviews, icon: Star, color: "text-primary bg-primary/10", tab: "reviews" },
+                { key: "unreadMessages", label: "Unread Messages", value: unreadMessages, icon: MessageSquare, color: "text-red-600 bg-red-500/10", tab: "messages" },
+                { key: "pendingCalls", label: "Pending Calls", value: pendingCalls, icon: CalendarCheck, color: "text-foreground bg-accent", tab: "calls" },
+              ].map((s) => (
+                <button key={s.key} onClick={() => setActiveTab(s.tab as typeof activeTab)} className="rounded-xl border border-border/60 bg-card p-5 text-left shadow-sm transition-colors hover:border-primary/40 cursor-pointer">
+                  <div className="flex items-center gap-4">
+                    <span className={`flex size-11 items-center justify-center rounded-xl ${s.color}`}>
+                      <s.icon className="size-5" />
+                    </span>
+                    <div>
+                      <div className="text-2xl font-bold text-foreground">{s.value}</div>
+                      <div className="text-xs text-muted-foreground">{s.label}</div>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
 
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <div className="text-xs font-semibold text-muted-foreground uppercase">Active Services</div>
-                <div className="text-2xl font-extrabold text-foreground mt-2">{services.length}</div>
-                <div className="text-[11px] text-primary font-medium mt-1">{services.filter((service) => service.isVisible).length} Visible</div>
+            {/* Action Cards Row */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-3">
+                <div className="flex items-center gap-2">
+                  <Star className="size-5 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Reviews</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {pendingReviews} pending, {reviews.length} total
+                </p>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setActiveTab("reviews")}>
+                  Moderate <ExternalLink className="size-3.5" />
+                </Button>
               </div>
+              <div className="rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-3">
+                <div className="flex items-center gap-2">
+                  <CalendarCheck className="size-5 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Scheduled Calls</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {pendingCalls} pending, {validLeads.length} total
+                </p>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setActiveTab("calls")}>
+                  View Calls <ExternalLink className="size-3.5" />
+                </Button>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-3">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="size-5 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Messages</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {unreadMessages} unread, {messages.length} total
+                </p>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setActiveTab("messages")}>
+                  Read Messages <ExternalLink className="size-3.5" />
+                </Button>
+              </div>
+            </div>
 
-              <div className="p-4 rounded-xl border border-border bg-card">
-                <div className="text-xs font-semibold text-muted-foreground uppercase">Tech Stack Items</div>
-                <div className="text-2xl font-extrabold text-foreground mt-2">{techStack.length}</div>
-                <div className="text-[11px] text-muted-foreground font-medium mt-1">Marquee Hover Enabled</div>
-              </div>
-
-              <div className="p-4 rounded-xl border border-border bg-card">
-                  <div className="text-xs font-semibold text-muted-foreground uppercase">Products & Projects</div>
-                <div className="text-2xl font-extrabold text-foreground mt-2">{projects.length}</div>
-                  <div className="text-[11px] text-amber-600 font-medium mt-1">{projects.filter((project) => project.isConcept).length} Illustrative Concepts</div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                {[
-                  { label: "Open Vacancies", value: jobs.filter((job) => job.isVisible).length, tab: "vacancies" },
-                  { label: "Gallery Items", value: gallery.filter((item) => item.isVisible).length, tab: "gallery" },
-                  { label: "Awards", value: awards.filter((award) => award.isVisible).length, tab: "awards" },
-                  { label: "Approved Reviews", value: reviews.filter((review) => review.approved).length, tab: "reviews" },
-                  { label: "Available Time Slots", value: timeSlots.filter((slot) => slot.isAvailable).length, tab: "time-slots" },
-                  { label: "Unread Messages", value: messages.filter((message) => !message.read).length, tab: "messages" },
-                  { label: "Landing Page Sections", value: sectionLayouts.filter((section) => section.isVisible).length, tab: "layout" },
-                  { label: "Editable Content Fields", value: Object.keys(siteContent).length, tab: "site-content" },
-                ].map((item) => (
-                  <button key={item.label} onClick={() => setActiveTab(item.tab as typeof activeTab)} className="rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/50">
-                    <span className="text-xs font-semibold uppercase text-muted-foreground">{item.label}</span>
-                    <span className="mt-2 block text-2xl font-extrabold text-foreground">{item.value}</span>
-                    <span className="mt-1 block text-[11px] text-primary">Manage</span>
-                  </button>
-                ))}
-              </div>
+            {/* Secondary Stats */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              {[
+                { label: "Awards", value: awards.length, tab: "awards" },
+                { label: "Gallery", value: gallery.length, tab: "gallery" },
+                { label: "Time Slots", value: timeSlots.length, tab: "time-slots" },
+                { label: "Service Categories", value: serviceCategories.length, tab: "service-categories" },
+              ].map((item) => (
+                <button key={item.label} onClick={() => setActiveTab(item.tab as typeof activeTab)} className="rounded-xl border border-border/60 bg-card p-4 text-left shadow-sm transition-colors hover:border-primary/40 cursor-pointer">
+                  <div className="text-xl font-bold text-foreground">{item.value}</div>
+                  <div className="text-xs text-muted-foreground">{item.label}</div>
+                </button>
+              ))}
             </div>
 
             {/* Recent Leads Table Overview */}
             <div className="p-5 rounded-xl border border-border bg-card space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-foreground">Recent Consultation Requests</h3>
-                <Button variant="clean" size="sm" onClick={() => setActiveTab("leads")}>
-                  View All Leads →
+                <Button variant="outline" size="sm" onClick={() => setActiveTab("calls")} className="gap-1.5">
+                  View All <ExternalLink className="size-3.5" />
                 </Button>
               </div>
 
@@ -295,7 +551,7 @@ export function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {leads.slice(0, 4).map((l) => (
+                    {validLeads.slice(0, 5).map((l) => (
                       <tr key={l.id} className="hover:bg-muted/30">
                         <td className="p-3 font-mono font-semibold text-primary">{l.id}</td>
                         <td className="p-3 font-medium">
@@ -306,17 +562,25 @@ export function AdminDashboard() {
                         <td className="p-3">{l.serviceInterest}</td>
                         <td className="p-3">
                           <span className={`px-2 py-0.5 rounded font-semibold text-[10px] ${
-                            l.status === "Confirmed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : "bg-amber-100 text-amber-700"
+                            l.status === "Confirmed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300" : l.status === "New" ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300" : "bg-muted text-muted-foreground"
                           }`}>
                             {l.status}
                           </span>
                         </td>
                       </tr>
                     ))}
+                    {validLeads.length === 0 && (
+                      <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No calls recorded yet.</td></tr>
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
+
+            {/* Open Website Link */}
+            <Button variant="outline" className="gap-2" onClick={() => window.open("/", "_blank")}>
+              Open Website <ExternalLink className="size-4" />
+            </Button>
           </div>
         )}
 
@@ -325,9 +589,9 @@ export function AdminDashboard() {
           <div className="space-y-6 animate-in fade-in duration-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Consultations & Lead Management</h2>
+                <h2 className="text-2xl font-bold text-foreground">Scheduled Calls</h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Record and manage calls arranged outside the site. Public enquiries open an email draft and do not arrive here automatically.
+                  Website booking requests are saved here. Requests remain pending until your team confirms or cancels them.
                 </p>
               </div>
 
@@ -341,71 +605,100 @@ export function AdminDashboard() {
               </div>
             </div>
 
-            <div className="p-4 rounded-xl border border-border bg-card">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-muted/60 text-muted-foreground uppercase text-[10px] font-bold border-b border-border">
-                    <tr>
-                      <th className="p-3">Date / Time</th>
-                      <th className="p-3">Client Name</th>
-                      <th className="p-3">Company</th>
-                      <th className="p-3">Interest</th>
-                      <th className="p-3">Budget</th>
-                      <th className="p-3">Status</th>
-                      <th className="p-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {leads.map((l) => (
-                      <tr key={l.id} className="hover:bg-muted/30">
-                        <td className="p-3 font-medium">
-                          <div>{l.bookingDate}</div>
-                          <div className="text-[10px] text-primary">{l.timeSlot}</div>
-                        </td>
-                        <td className="p-3">
-                          <div className="font-semibold">{l.name}</div>
-                          <div className="text-[10px] text-muted-foreground">{l.email}</div>
-                        </td>
-                        <td className="p-3">{l.company || "N/A"}</td>
-                        <td className="p-3 font-medium">{l.serviceInterest}</td>
-                        <td className="p-3 text-muted-foreground">{l.budgetRange}</td>
-                        <td className="p-3">
-                          <select
-                            value={l.status}
-                            onChange={(e) => store.updateLeadStatus(l.id, e.target.value as any, session?.email)}
-                            className="form-field py-1 text-xs"
-                          >
-                            <option value="New">New</option>
-                            <option value="Contacted">Contacted</option>
-                            <option value="Confirmed">Confirmed</option>
-                            <option value="Cancelled">Cancelled</option>
-                          </select>
-                        </td>
-                        <td className="p-3 text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => store.deleteLead(l.id, session?.email)}
-                            className="text-red-500 hover:bg-red-50"
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                    {leads.length === 0 ? (
-                      <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No calls recorded. Public enquiries are not automatically sent to this browser.</td></tr>
-                    ) : null}
-                  </tbody>
-                </table>
+            {syncError ? (
+              <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                {syncError}
+              </p>
+            ) : null}
+            {validLeads.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground">
+                No scheduled calls yet. Bookings submitted from the website will appear here.
               </div>
-            </div>
+            ) : (
+              <div className="grid gap-4 lg:grid-cols-2">
+                {validLeads.map((lead) => {
+                  const status = lead.status === "New" ? "pending"
+                    : lead.status === "Confirmed" ? "confirmed"
+                      : lead.status === "Cancelled" ? "cancelled"
+                        : lead.status;
+                  const statusClass = status === "confirmed"
+                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                    : status === "completed"
+                      ? "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200"
+                      : status === "cancelled"
+                        ? "bg-muted text-muted-foreground"
+                        : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200";
+                  return (
+                    <article key={lead.id} className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="font-semibold text-foreground">{lead.name || "Unnamed visitor"}</h3>
+                          <p className="text-xs text-muted-foreground">{lead.company || "No company"}</p>
+                        </div>
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusClass}`}>
+                          {status}
+                        </span>
+                      </div>
+                      <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                        <a className="truncate hover:text-primary" href={`mailto:${lead.email}`}>
+                          {lead.email || "No email provided"}
+                        </a>
+                        <a className="hover:text-primary" href={lead.phone ? `tel:${lead.phone}` : undefined}>
+                          {lead.phone || "No phone provided"}
+                        </a>
+                        <span>{lead.bookingDate || "Date not set"}</span>
+                        <span>{lead.timeSlot || "Time not set"}</span>
+                      </div>
+                      <div className="rounded-lg bg-muted/60 p-3 text-sm">
+                        <span className="font-medium text-foreground">Topic: </span>
+                        {lead.topic || lead.serviceInterest || "General consultation"}
+                      </div>
+                      {lead.projectBrief || lead.message ? (
+                        <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                          {lead.projectBrief || lead.message}
+                        </p>
+                      ) : null}
+                      <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+                        <label className="sr-only" htmlFor={`call-status-${lead.id}`}>Booking status</label>
+                        <select
+                          id={`call-status-${lead.id}`}
+                          value={status}
+                          onChange={(event) =>
+                            store.updateLeadStatus(
+                              lead.id,
+                              event.target.value as ConsultationLead["status"],
+                              session?.email,
+                            )
+                          }
+                          className="form-field max-w-44 py-2 text-sm"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="confirmed">Confirmed</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                          {status === "Contacted" ? <option value="Contacted">Contacted</option> : null}
+                        </select>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Delete booking from ${lead.name || "visitor"}`}
+                          onClick={() => store.deleteLead(lead.id, session?.email)}
+                          className="text-red-500 hover:bg-red-50"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
 
             <Dialog open={callModalOpen} onOpenChange={setCallModalOpen}>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Record Scheduled Call</DialogTitle>
-                  <DialogDescription>Enter a call arranged outside the website. This record is saved only in this browser.</DialogDescription>
+                  <DialogDescription>Enter a call arranged outside the website. This record is saved to the CMS for administrator access.</DialogDescription>
                 </DialogHeader>
                 <form
                   className="grid max-h-[70vh] grid-cols-1 gap-4 overflow-y-auto p-1 sm:grid-cols-2"
@@ -430,12 +723,6 @@ export function AdminDashboard() {
                     Call date
                     <input required type="date" value={callDraft.bookingDate} onChange={(event) => setCallDraft({ ...callDraft, bookingDate: event.target.value })} className="form-field" />
                   </label>
-                  <ImageAssetPicker
-                    label="Article cover image"
-                    value={editingBlog.coverImage}
-                    token={session?.token || ""}
-                    onChange={(coverImage) => setEditingBlog({ ...editingBlog, coverImage })}
-                  />
                   <label className="field-label">
                     Call time
                     <input required value={callDraft.timeSlot} onChange={(event) => setCallDraft({ ...callDraft, timeSlot: event.target.value })} placeholder="e.g. 10:00 AM" className="form-field" />
@@ -577,6 +864,7 @@ export function AdminDashboard() {
                     id: `tech-${Date.now()}`,
                     name: "New Technology",
                     category: "Frontend",
+                    iconName: "",
                     tooltip: "Enterprise framework tool",
                     order: techStack.length + 1,
                     isVisible: true
@@ -657,94 +945,114 @@ export function AdminDashboard() {
           </div>
         )}
 
-        {/* MODULE 5: PORTFOLIO & CASE STUDIES CRUD */}
+        {/* MODULE 5: PRODUCTS / PORTFOLIO (ULTRA BULB IT TABLE REPLICA) */}
         {(activeTab === "portfolio" || activeTab === "products") && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Products & Portfolio</h2>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Manage product categories, images, descriptions, technology, reviews, awards, access features, owners, tags, links, and publication.
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">Products</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Showcase of projects you've built.
                 </p>
               </div>
 
               <Button
                 variant="brand"
-                onClick={() => {
-                  setEditingProject({
-                    id: `proj-${Date.now()}`,
-                    slug: "",
-                    title: "",
-                    category: "",
-                    categoryId: "",
-                    summary: "",
-                    challenge: "",
-                    solution: "",
-                    results: [],
-                    metrics: [],
-                    techTags: [],
-                    review: "",
-                    awards: "",
-                    accessFeatures: [],
-                    serviceOwners: [],
-                    tags: [],
-                    link: "",
-                    coverImage: "",
-                    gallery: [],
-                    isConcept: false,
-                    isFeatured: false,
-                    order: projects.length + 1,
-                    isVisible: true
-                  });
-                  setProjectModalOpen(true);
-                }}
+                onClick={openNewProductModal}
+                className="bg-[#0b1f3f] hover:bg-[#123163] text-white gap-1.5 shadow-sm"
               >
-                <Plus className="size-4 mr-1.5" /> Add Product
+                <Plus className="size-4" /> Add New
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {projects.map((p) => (
-                <div key={p.id} className="p-5 rounded-xl border border-border bg-card space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-accent px-2.5 py-1 rounded">
-                      {p.category}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setEditingProject(p);
-                          setProjectModalOpen(true);
-                        }}
-                      >
-                        <Edit3 className="size-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => store.deleteProject(p.id, session?.email)}
-                        className="text-red-500"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <h3 className="font-bold text-lg text-foreground">{p.title}</h3>
-                  <p className="text-xs text-muted-foreground">{p.summary}</p>
-
-                  <div className="grid grid-cols-3 gap-2 py-2">
-                    {p.metrics.map((m, idx) => (
-                      <div key={idx} className="p-2 rounded bg-muted/50 text-center">
-                        <div className="font-bold text-xs text-primary">{m.value}</div>
-                        <div className="text-[10px] text-muted-foreground">{m.label}</div>
-                      </div>
+            <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-muted/40 text-xs font-semibold text-muted-foreground border-b border-border">
+                    <tr>
+                      <th className="py-3.5 px-5 font-medium">Title</th>
+                      <th className="py-3.5 px-5 font-medium">Service Category</th>
+                      <th className="py-3.5 px-5 font-medium">Image URL</th>
+                      <th className="py-3.5 px-5 font-medium">Additional Picture URLs (one per line)</th>
+                      <th className="py-3.5 px-5 font-medium text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {projects.map((p) => (
+                      <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="py-4 px-5">
+                          <div className="flex items-center gap-3">
+                            {p.coverImage ? (
+                              <img 
+                                src={p.coverImage} 
+                                alt={p.title} 
+                                className="size-11 rounded-lg object-cover border border-border/60 shrink-0" 
+                                onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                              />
+                            ) : (
+                              <div className="size-11 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-xs shrink-0">
+                                No img
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="font-semibold text-foreground text-sm truncate">{p.title}</div>
+                              <div className="text-xs text-muted-foreground truncate">{p.category || "General"}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-5 max-w-xs">
+                          <p className="truncate text-xs text-muted-foreground">
+                            {p.summary || "No description provided."}
+                          </p>
+                        </td>
+                        <td className="py-4 px-5">
+                          {p.isFeatured ? (
+                            <span className="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">
+                              Featured
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-5">
+                          <span className="text-xs text-muted-foreground truncate block max-w-xs">
+                            {p.gallery?.length ? (
+                              <span className="text-primary font-medium">{p.gallery.length} additional image{p.gallery.length > 1 ? "s" : ""}</span>
+                            ) : (
+                              "—"
+                            )}
+                          </span>
+                        </td>
+                        <td className="py-4 px-5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => openEditProductModal(p)}
+                              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors cursor-pointer"
+                              title="Edit product"
+                            >
+                              <Pencil className="size-4" />
+                            </button>
+                            <button
+                              onClick={() => store.deleteProject(p.id, session?.email)}
+                              className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors cursor-pointer"
+                              title="Delete product"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
                     ))}
-                  </div>
-                </div>
-              ))}
+                    {projects.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center text-sm text-muted-foreground">
+                          No products found. Click "+ Add New" to create one.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -989,6 +1297,37 @@ export function AdminDashboard() {
                 </div>
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="field-label">
+                  WhatsApp number or link
+                  <input
+                    type="text"
+                    value={settings.whatsappContact || ""}
+                    onChange={(e) => store.updateSettings({ whatsappContact: e.target.value }, session?.email)}
+                    className="form-field"
+                    placeholder="+1 555 123 4567 or https://wa.me/15551234567"
+                    autoComplete="tel"
+                  />
+                  <span className="font-normal text-muted-foreground">
+                    Include the country code. You can also paste a WhatsApp chat link.
+                  </span>
+                </label>
+                <label className="field-label">
+                  Facebook Messenger link or username
+                  <input
+                    type="text"
+                    value={settings.messengerContact || ""}
+                    onChange={(e) => store.updateSettings({ messengerContact: e.target.value }, session?.email)}
+                    className="form-field"
+                    placeholder="https://m.me/yourpage or yourpage"
+                    autoComplete="url"
+                  />
+                  <span className="font-normal text-muted-foreground">
+                    Paste a Messenger link or enter your Facebook page username.
+                  </span>
+                </label>
+              </div>
+
               <div>
                 <label className="field-label">
                   Office HQ Address
@@ -1157,6 +1496,45 @@ export function AdminDashboard() {
                 />
               </label>
               <label className="field-label">
+                Simple Icons slug (optional)
+                <input
+                  type="text"
+                  value={editingTech.iconName || ""}
+                  onChange={(e) => setEditingTech({ ...editingTech, iconName: e.target.value })}
+                  className="form-field"
+                  placeholder="react, nextdotjs, nodedotjs, postgresql"
+                />
+                <span className="font-normal text-muted-foreground">
+                  Leave blank to match the logo to the technology name.
+                </span>
+              </label>
+              <label className="field-label">
+                Category
+                <select
+                  value={editingTech.category}
+                  onChange={(e) => setEditingTech({ ...editingTech, category: e.target.value })}
+                  className="form-field"
+                >
+                  <option>Frontend</option>
+                  <option>Backend</option>
+                  <option>Database</option>
+                  <option>DevOps &amp; Cloud</option>
+                  <option>Mobile</option>
+                  <option>Design &amp; Strategy</option>
+                </select>
+              </label>
+              <label className="field-label">
+                Display order
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={editingTech.order}
+                  onChange={(e) => setEditingTech({ ...editingTech, order: Number(e.target.value) })}
+                  className="form-field"
+                />
+              </label>
+              <label className="field-label">
                 Hover Tooltip Text
                 <input
                   type="text"
@@ -1178,188 +1556,323 @@ export function AdminDashboard() {
           )}
         </DialogContent>
       </Dialog>
-      {/* PROJECT MODAL */}
+      {/* PROJECT MODAL (ULTRA BULB IT ADD PRODUCTS REPLICA) */}
       <Dialog open={projectModalOpen} onOpenChange={setProjectModalOpen}>
-        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingProject && projects.some((project) => project.id === editingProject.id) ? "Edit Product" : "Add Product"}</DialogTitle>
-            <DialogDescription>
-              Build a complete product showcase with its service category, images, technology, and project details.
+        <DialogContent className="max-h-[92vh] max-w-2xl overflow-y-auto p-6 sm:p-8">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
+              {editingProject ? "Edit Product" : "Add Products"}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Configure product details, category, images, tags, and showcase features.
             </DialogDescription>
           </DialogHeader>
-          {editingProject && (
-            <form
-              className="space-y-5"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const matchedService = services.find((service) => service.pillar === editingProject.category);
-                const titleSlug = editingProject.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-                const slug = editingProject.slug.trim() || titleSlug || `product-${Date.now()}`;
-                if (projects.some((project) => project.slug === slug && project.id !== editingProject.id)) {
-                  window.alert("That URL slug is already in use. Choose a unique slug before saving.");
-                  return;
-                }
-                const { categoryId: existingCategoryId, ...projectFields } = editingProject;
-                const savedProject: Project = {
-                  ...projectFields,
-                  slug,
-                  category: editingProject.categoryId?.startsWith("custom:")
-                    ? editingProject.categoryId.slice(7)
-                    : editingProject.category,
-                  ...(matchedService?.id || existingCategoryId
-                    ? { categoryId: matchedService?.id || existingCategoryId }
-                    : {}),
-                  results: editingProject.results ?? [],
-                  metrics: editingProject.metrics ?? [],
-                  techTags: editingProject.techTags ?? [],
-                  accessFeatures: editingProject.accessFeatures ?? [],
-                  serviceOwners: editingProject.serviceOwners ?? [],
-                  tags: editingProject.tags ?? [],
-                  gallery: editingProject.gallery ?? [],
-                };
-                store.saveProject(savedProject, session?.email);
-                setProjectModalOpen(false);
-              }}
-            >
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="field-label">
-                  Title <span className="text-destructive">*</span>
-                  <input required value={editingProject.title} onChange={(event) => setEditingProject({ ...editingProject, title: event.target.value })} className="form-field" />
+
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!projectForm.title.trim()) {
+                window.alert("Title is required");
+                return;
+              }
+              const titleSlug = projectForm.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+              const slug = editingProject?.slug || titleSlug || `product-${Date.now()}`;
+              const selectedCat = serviceCategories.find((c) => c.name === projectForm.category || c.id === projectForm.categoryId);
+
+              const savedProject: Project = {
+                id: editingProject?.id || `proj-${Date.now()}`,
+                slug,
+                title: projectForm.title.trim(),
+                category: projectForm.category || selectedCat?.name || "General",
+                categoryId: selectedCat?.id || projectForm.categoryId || "",
+                summary: projectForm.summary.trim(),
+                challenge: editingProject?.challenge || "",
+                solution: editingProject?.solution || "",
+                results: editingProject?.results || [],
+                metrics: editingProject?.metrics || [],
+                techTags: projectForm.techStackText.split(",").map((s) => s.trim()).filter(Boolean),
+                review: projectForm.review.trim(),
+                awards: projectForm.awards.trim(),
+                accessFeatures: projectForm.accessFeaturesText.split(/\r?\n/).map((s) => s.trim()).filter(Boolean),
+                serviceOwners: projectForm.serviceOwnersText.split(/\r?\n/).map((s) => s.trim()).filter(Boolean),
+                tags: projectForm.tagsText.split(",").map((s) => s.trim()).filter(Boolean),
+                link: projectForm.link.trim(),
+                coverImage: projectForm.coverImage.trim(),
+                gallery: projectForm.galleryText.split(/\r?\n/).map((s) => s.trim()).filter(Boolean),
+                isConcept: editingProject?.isConcept ?? false,
+                isFeatured: projectForm.isFeatured,
+                order: Number(projectForm.order) || 0,
+                isVisible: true,
+              };
+
+              store.saveProject(savedProject, session?.email);
+              setProjectModalOpen(false);
+            }}
+          >
+            {/* Row 1: Title & Service Category */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
+                  Title <span className="text-red-500">*</span>
                 </label>
-                <label className="field-label">
+                <input
+                  required
+                  type="text"
+                  value={projectForm.title}
+                  onChange={(e) => setProjectForm((f) => ({ ...f, title: e.target.value }))}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
                   Service Category
-                  <select
-                    required
-                    value={editingProject.categoryId?.startsWith("custom:") ? "Other" : editingProject.category}
-                    onChange={(event) => setEditingProject({ ...editingProject, category: event.target.value, categoryId: services.find((service) => service.pillar === event.target.value)?.id || "" })}
-                    className="form-field"
-                  >
-                    {!editingProject.category || !services.some((service) => service.pillar === editingProject.category) ? <option value={editingProject.category}>{editingProject.category || "Select Service Category"}</option> : null}
-                    {[...new Set(services.map((service) => service.pillar))].map((category) => <option key={category} value={category}>{category}</option>)}
-                    <option value="Other">Other</option>
-                  </select>
                 </label>
-                {editingProject.category === "Other" || editingProject.categoryId?.startsWith("custom:") ? (
-                  <label className="field-label sm:col-span-2">
-                    Custom Category
-                    <input required value={editingProject.categoryId?.startsWith("custom:") ? editingProject.categoryId.slice(7) : ""} onChange={(event) => setEditingProject({ ...editingProject, category: "Other", categoryId: `custom:${event.target.value}` })} className="form-field" />
-                  </label>
-                ) : null}
-                <label className="field-label">
-                  URL Slug
-                  <input value={editingProject.slug} onChange={(event) => setEditingProject({ ...editingProject, slug: event.target.value })} className="form-field" placeholder="generated-from-title" />
-                </label>
-                <label className="field-label">
-                  Order
-                  <input type="number" value={editingProject.order} onChange={(event) => setEditingProject({ ...editingProject, order: Number(event.target.value) || 0 })} className="form-field" />
-                </label>
+                <select
+                  value={projectForm.category}
+                  onChange={(e) =>
+                    setProjectForm((f) => ({
+                      ...f,
+                      category: e.target.value,
+                      categoryId: serviceCategories.find((c) => c.name === e.target.value)?.id || "",
+                    }))
+                  }
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors cursor-pointer"
+                >
+                  <option value="">Select Service Category</option>
+                  {serviceCategories.filter((c) => c.active).map((cat) => (
+                    <option key={cat.id} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
+                  {serviceCategories.length === 0 &&
+                    ["Healthcare", "E-commerce", "Fintech", "Enterprise SaaS", "AI & Automation", "Mobile App"].map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                </select>
               </div>
+            </div>
 
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-3">
-                  <ImageAssetPicker
-                    label="Image URL * — select or upload an image"
-                    value={editingProject.coverImage}
-                    token={session?.token || ""}
-                    onChange={(coverImage) => setEditingProject({ ...editingProject, coverImage: String(coverImage) })}
-                  />
-                  <label className="field-label">
-                    Or paste an image URL
-                    <input required type="url" value={editingProject.coverImage} onChange={(event) => setEditingProject({ ...editingProject, coverImage: event.target.value })} className="form-field" placeholder="https://…" />
-                  </label>
-                </div>
-                <div className="space-y-3">
-                  <ImageAssetPicker
-                    label="Additional Pictures"
-                    value={editingProject.gallery ?? []}
-                    multiple
-                    token={session?.token || ""}
-                    onChange={(gallery) => setEditingProject({ ...editingProject, gallery: Array.isArray(gallery) ? gallery : [gallery] })}
-                  />
-                  <label className="field-label">
-                    Additional Picture URLs (one per line)
-                    <textarea rows={3} value={(editingProject.gallery ?? []).join("\n")} onChange={(event) => setEditingProject({ ...editingProject, gallery: event.target.value.split(/\r?\n/).map((url) => url.trim()).filter(Boolean) })} className="form-field" placeholder="https://…" />
-                  </label>
-                </div>
-              </div>
-
-              <label className="field-label">
-                Description <span className="text-destructive">*</span>
-                <textarea required rows={4} value={editingProject.summary} onChange={(event) => setEditingProject({ ...editingProject, summary: event.target.value })} className="form-field" />
+            {/* Row 2: Image URL with upload dropzone box */}
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
+                Image URL <span className="text-red-500">*</span>
               </label>
 
-              <label className="field-label">
+              <div className="rounded-2xl border border-dashed border-border/80 bg-muted/20 p-6 flex flex-col items-center justify-center gap-2.5 text-center transition-colors hover:border-primary/40">
+                {projectForm.coverImage ? (
+                  <div className="relative w-full max-w-xs overflow-hidden rounded-xl border border-border bg-card shadow-sm mb-1">
+                    <img
+                      src={projectForm.coverImage}
+                      alt="Cover Preview"
+                      className="h-28 w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setProjectForm((f) => ({ ...f, coverImage: "" }))}
+                      className="absolute top-2 right-2 p-1 rounded-full bg-background/80 text-foreground hover:bg-background text-xs shadow"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <ImagePlus className="size-8 text-muted-foreground/70 stroke-[1.5]" />
+                    <span className="text-xs text-muted-foreground">Choose an image from your computer</span>
+                  </>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleProductImageUpload}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                  className="gap-2 text-xs rounded-xl"
+                >
+                  <Upload className="size-3.5" /> {uploadingImage ? "Uploading..." : "Upload image"}
+                </Button>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Or paste an image URL"
+                value={projectForm.coverImage}
+                onChange={(e) => setProjectForm((f) => ({ ...f, coverImage: e.target.value }))}
+                className="w-full mt-2.5 px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+              />
+            </div>
+
+            {/* Row 3: Additional Picture URLs */}
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
+                Additional Picture URLs (one per line)
+              </label>
+              <textarea
+                rows={3}
+                value={projectForm.galleryText}
+                onChange={(e) => setProjectForm((f) => ({ ...f, galleryText: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+              />
+            </div>
+
+            {/* Row 4: Description */}
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
+                Description <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                required
+                rows={3}
+                value={projectForm.summary}
+                onChange={(e) => setProjectForm((f) => ({ ...f, summary: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+              />
+            </div>
+
+            {/* Row 5: Tech Stack */}
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
                 Tech Stack (comma-separated)
-                <input value={(editingProject.techTags ?? []).join(", ")} onChange={(event) => setEditingProject({ ...editingProject, techTags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} className="form-field" placeholder="React, TypeScript, MongoDB" />
               </label>
+              <input
+                type="text"
+                value={projectForm.techStackText}
+                onChange={(e) => setProjectForm((f) => ({ ...f, techStackText: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+              />
+            </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="field-label">
-                  Client Review
-                  <textarea rows={3} value={editingProject.review ?? ""} onChange={(event) => setEditingProject({ ...editingProject, review: event.target.value })} className="form-field" />
+            {/* Row 6: Client Review */}
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
+                Client Review
+              </label>
+              <textarea
+                rows={3}
+                value={projectForm.review}
+                onChange={(e) => setProjectForm((f) => ({ ...f, review: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+              />
+            </div>
+
+            {/* Row 7: Awards & Recognition */}
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
+                Awards & Recognition
+              </label>
+              <textarea
+                rows={3}
+                value={projectForm.awards}
+                onChange={(e) => setProjectForm((f) => ({ ...f, awards: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+              />
+            </div>
+
+            {/* Row 8: Access Features */}
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
+                Access Features (one per line)
+              </label>
+              <textarea
+                rows={3}
+                value={projectForm.accessFeaturesText}
+                onChange={(e) => setProjectForm((f) => ({ ...f, accessFeaturesText: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+              />
+            </div>
+
+            {/* Row 9: Service Owners */}
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
+                Service Owners
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Name - Role (one per line)"
+                value={projectForm.serviceOwnersText}
+                onChange={(e) => setProjectForm((f) => ({ ...f, serviceOwnersText: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+              />
+            </div>
+
+            {/* Row 10: Tags */}
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
+                Tags (comma-separated)
+              </label>
+              <input
+                type="text"
+                value={projectForm.tagsText}
+                onChange={(e) => setProjectForm((f) => ({ ...f, tagsText: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+              />
+            </div>
+
+            {/* Row 11: Project Link */}
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1.5">
+                Project Link
+              </label>
+              <input
+                type="url"
+                value={projectForm.link}
+                onChange={(e) => setProjectForm((f) => ({ ...f, link: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+              />
+            </div>
+
+            {/* Row 12: Order & Featured Switch */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end pt-1">
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1.5">
+                  Order
                 </label>
-                <label className="field-label">
-                  Awards & Recognition
-                  <textarea rows={3} value={editingProject.awards ?? ""} onChange={(event) => setEditingProject({ ...editingProject, awards: event.target.value })} className="form-field" />
-                </label>
-                <label className="field-label">
-                  Access Features (one per line)
-                  <textarea rows={3} value={(editingProject.accessFeatures ?? []).join("\n")} onChange={(event) => setEditingProject({ ...editingProject, accessFeatures: event.target.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean) })} className="form-field" />
-                </label>
-                <label className="field-label">
-                  Service Owners (one per line: Name - Role)
-                  <textarea rows={3} value={(editingProject.serviceOwners ?? []).join("\n")} onChange={(event) => setEditingProject({ ...editingProject, serviceOwners: event.target.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean) })} className="form-field" />
-                </label>
+                <input
+                  type="number"
+                  value={projectForm.order}
+                  onChange={(e) => setProjectForm((f) => ({ ...f, order: Number(e.target.value) || 0 }))}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+                />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="field-label">
-                  Tags (comma-separated)
-                  <input value={(editingProject.tags ?? []).join(", ")} onChange={(event) => setEditingProject({ ...editingProject, tags: event.target.value.split(",").map((tag) => tag.trim()).filter(Boolean) })} className="form-field" />
-                </label>
-                <label className="field-label">
-                  Project Link
-                  <input type="url" value={editingProject.link ?? ""} onChange={(event) => setEditingProject({ ...editingProject, link: event.target.value })} className="form-field" placeholder="https://…" />
-                </label>
-                <label className="field-label">
-                  Challenge
-                  <textarea rows={3} value={editingProject.challenge} onChange={(event) => setEditingProject({ ...editingProject, challenge: event.target.value })} className="form-field" />
-                </label>
-                <label className="field-label">
-                  Solution & Architecture
-                  <textarea rows={3} value={editingProject.solution} onChange={(event) => setEditingProject({ ...editingProject, solution: event.target.value })} className="form-field" />
-                </label>
-                <label className="field-label">
-                  Results (one per line)
-                  <textarea rows={3} value={(editingProject.results ?? []).join("\n")} onChange={(event) => setEditingProject({ ...editingProject, results: event.target.value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean) })} className="form-field" />
-                </label>
-                <label className="field-label">
-                  Metrics (one per line: Label | Value)
-                  <textarea rows={3} value={(editingProject.metrics ?? []).map((metric) => `${metric.label} | ${metric.value}`).join("\n")} onChange={(event) => setEditingProject({ ...editingProject, metrics: event.target.value.split(/\r?\n/).map((line) => line.split("|").map((part) => part.trim())).filter((parts) => parts.length === 2 && parts.every(Boolean)).map(([label, value]) => ({ label: label || "", value: value || "" })) })} className="form-field" />
-                </label>
+              <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
+                <span className="text-sm font-semibold text-foreground">Featured</span>
+                <Switch
+                  checked={projectForm.isFeatured}
+                  onCheckedChange={(checked) => setProjectForm((f) => ({ ...f, isFeatured: checked }))}
+                />
               </div>
+            </div>
 
-              <div className="flex flex-wrap gap-6 rounded-lg border border-border p-4">
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <input type="checkbox" checked={editingProject.isFeatured} onChange={(event) => setEditingProject({ ...editingProject, isFeatured: event.target.checked })} />
-                  Featured product
-                </label>
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <input type="checkbox" checked={editingProject.isVisible} onChange={(event) => setEditingProject({ ...editingProject, isVisible: event.target.checked })} />
-                  Publish on website
-                </label>
-                <label className="flex items-center gap-2 text-sm font-medium">
-                  <input type="checkbox" checked={editingProject.isConcept} onChange={(event) => setEditingProject({ ...editingProject, isConcept: event.target.checked })} />
-                  Illustrative concept
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-2 border-t border-border pt-4">
-                <Button type="button" variant="outline" onClick={() => setProjectModalOpen(false)}>Cancel</Button>
-                <Button type="submit" variant="brand">Save Product</Button>
-              </div>
-            </form>
-          )}
+            {/* Dialog Footer Actions */}
+            <div className="flex justify-end gap-3 pt-5 border-t border-border mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setProjectModalOpen(false)}
+                className="rounded-xl px-5"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-[#0b1f3f] hover:bg-[#123163] text-white rounded-xl px-6 font-semibold shadow-sm"
+              >
+                Save
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
@@ -1371,6 +1884,12 @@ export function AdminDashboard() {
           </DialogHeader>
           {editingBlog && (
             <div className="space-y-3 text-xs">
+              <ImageAssetPicker
+                label="Article cover image"
+                value={editingBlog.coverImage || ""}
+                token={session?.token || ""}
+                onChange={(coverImage) => setEditingBlog({ ...editingBlog, coverImage: String(coverImage) })}
+              />
               <label className="field-label">
                 Title
                 <input

@@ -1,10 +1,29 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, Mail, Phone, MapPin, ShieldCheck, Heart } from "lucide-react";
+import {
+  CalendarCheck,
+  Facebook,
+  Linkedin,
+  Mail,
+  MapPin,
+  Phone,
+  ShieldCheck,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useCmsStore } from "@/hooks/use-cms-store";
 import logoData from "@/assets/assetify-logo.svg.asset.json";
 
 export function Footer() {
-  const { settings, services } = useCmsStore();
+  const { settings } = useCmsStore();
+
+  // Fixed 6-item service list as audited in UltraBulb IT
+  const footerServices = [
+    { title: "Web Development", slug: "web-development" },
+    { title: "Mobile Apps", slug: "mobile-development" },
+    { title: "UI/UX Design", slug: "product-design" },
+    { title: "Cloud Architecture", slug: "cloud-architecture" },
+    { title: "AI & Machine Learning", slug: "ai-engineering" },
+    { title: "Enterprise Cybersecurity", slug: "cybersecurity" },
+  ];
 
   return (
     <footer className="site-footer bg-card border-t border-border">
@@ -25,49 +44,63 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
-              Architecting your digital future with enterprise software engineering, strategic brand growth, and zero-trust cloud infrastructure.
+              {settings.tagline || "Architecting your digital future with enterprise software engineering, strategic brand growth, and zero-trust cloud infrastructure."}
             </p>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground pt-2">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
               <div className="flex items-center gap-1.5 font-medium text-foreground">
                 <ShieldCheck className="size-4 text-primary" /> ISO 27001 & SOC 2 Ready
               </div>
             </div>
+
+            {/* Schedule CTA in Footer */}
+            <div className="pt-2">
+              <Button variant="brand" size="sm" asChild>
+                <Link to="/schedule">
+                  Schedule a Call <CalendarCheck className="size-3.5 ml-1" />
+                </Link>
+              </Button>
+            </div>
           </div>
 
-          {/* Column 1: Services */}
+          {/* Column 1: Services (6 items) */}
           <div>
-            <h4 className="font-bold text-xs uppercase tracking-wider text-foreground mb-4">Capabilities</h4>
+            <h4 className="font-bold text-xs uppercase tracking-wider text-foreground mb-4">Services</h4>
             <ul className="space-y-2.5 text-xs">
-              {services.map((s) => (
-                <li key={s.id}>
-                  <Link to={`/services/$slug`} params={{ slug: s.slug }} className="text-muted-foreground hover:text-primary transition-colors">
+              {footerServices.map((s) => (
+                <li key={s.slug}>
+                  <Link to={`/projects?category=${encodeURIComponent(s.title)}`} className="text-muted-foreground hover:text-primary transition-colors">
                     {s.title}
                   </Link>
                 </li>
               ))}
               <li>
                 <Link to="/services" className="text-primary font-semibold hover:underline">
-                  All Capabilities →
+                  All Services →
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 2: Company */}
+          {/* Column 2: Company (all 9 audited routes: Home, About, Services, Projects, Process, Reviews, Schedule, Careers, Contact) */}
           <div>
             <h4 className="font-bold text-xs uppercase tracking-wider text-foreground mb-4">Company</h4>
-            <ul className="space-y-2.5 text-xs">
-              <li><Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">About Us</Link></li>
-              <li><Link to="/why-us" className="text-muted-foreground hover:text-primary transition-colors">Why Choose Us</Link></li>
-              <li><Link to="/team" className="text-muted-foreground hover:text-primary transition-colors">Leadership & Team</Link></li>
-              <li><Link to="/careers" className="text-muted-foreground hover:text-primary transition-colors">Careers & Openings</Link></li>
-              <li><Link to="/blog" className="text-muted-foreground hover:text-primary transition-colors">Blog & Tech Insights</Link></li>
+            <ul className="space-y-2 text-xs">
+              <li><Link to="/" className="text-muted-foreground hover:text-primary transition-colors">Home</Link></li>
+              <li><Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">About</Link></li>
+              <li><Link to="/services" className="text-muted-foreground hover:text-primary transition-colors">Services</Link></li>
+              <li><Link to="/projects" className="text-muted-foreground hover:text-primary transition-colors">Projects</Link></li>
+              <li><Link to="/process" className="text-muted-foreground hover:text-primary transition-colors">Process</Link></li>
+              <li><Link to="/why-choose-us" className="text-muted-foreground hover:text-primary transition-colors">Why Choose Us</Link></li>
+              <li><Link to="/review" className="text-muted-foreground hover:text-primary transition-colors">Reviews</Link></li>
+              <li><Link to="/schedule" className="text-muted-foreground hover:text-primary transition-colors">Schedule</Link></li>
+              <li><Link to="/careers" className="text-muted-foreground hover:text-primary transition-colors">Careers</Link></li>
+              <li><Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">Contact</Link></li>
             </ul>
           </div>
 
           {/* Column 3: Contact Info */}
           <div>
-            <h4 className="font-bold text-xs uppercase tracking-wider text-foreground mb-4">Connect</h4>
+            <h4 className="font-bold text-xs uppercase tracking-wider text-foreground mb-4">Contact</h4>
             <ul className="space-y-3 text-xs">
               <li>
                 <a href={`mailto:${settings.contactEmail}`} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
@@ -90,21 +123,39 @@ export function Footer() {
         {/* Divider */}
         <div className="my-8 border-t border-border" />
 
-        {/* Bottom Note & Rule compliance label */}
+        {/* Bottom Bar: Copyright and social links */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>© 2026 Assetify Hub. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <span className="text-[11px] bg-accent text-primary font-medium px-2.5 py-1 rounded">
-              Note: Portfolio imagery items represent illustrative design concepts.
-            </span>
-            <a 
-              href={settings.socialLinks.facebook} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="hover:text-primary transition-colors flex items-center gap-1 font-medium"
-            >
-              Facebook <ArrowUpRight className="size-3" />
-            </a>
+          <p>© {new Date().getFullYear()} {settings.brandName}. All rights reserved.</p>
+
+          {/* Social Links */}
+          <div className="flex items-center gap-4 flex-wrap">
+            {settings.socialLinks?.facebook && (
+              <a
+                href={settings.socialLinks.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Visit Assetify Hub on Facebook"
+                className="rounded-full p-2 hover:bg-primary/10 hover:text-primary transition-colors"
+              >
+                <Facebook className="size-4" aria-hidden="true" />
+              </a>
+            )}
+            {settings.socialLinks?.linkedin && (
+              <a
+                href={settings.socialLinks.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Visit Assetify Hub on LinkedIn"
+                className="rounded-full p-2 hover:bg-primary/10 hover:text-primary transition-colors"
+              >
+                <Linkedin className="size-4" aria-hidden="true" />
+              </a>
+            )}
+            {settings.socialLinks?.instagram && (
+              <a href={settings.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                Instagram
+              </a>
+            )}
           </div>
         </div>
       </div>
