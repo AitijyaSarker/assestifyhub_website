@@ -9,17 +9,68 @@ import { CmsSnapshot, ImageAsset } from "./models.js";
 import { dbRepository } from "./repositories/db.js";
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const PORT = Number(process.env.PORT || 5000);
 const JWT_SECRET = process.env.JWT_SECRET;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@assetify.com";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/assetifyhub";
 const MONGO_DB_NAME = process.env.MONGO_DB_NAME || "assetifyhub";
+const CORS_ORIGINS = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const IMAGE_BUCKET_NAME = "image_files";
 
-app.use(cors());
+function validateProductionEnvironment() {
+  if (!IS_PRODUCTION) return;
+
+  const missing = [
+    ["MONGO_URI", process.env.MONGO_URI],
+    ["MONGO_DB_NAME", process.env.MONGO_DB_NAME],
+    ["JWT_SECRET", JWT_SECRET],
+    ["ADMIN_EMAIL", process.env.ADMIN_EMAIL],
+    ["ADMIN_PASSWORD", ADMIN_PASSWORD],
+    ["CORS_ORIGINS", process.env.CORS_ORIGINS],
+  ]
+    .filter(([, value]) => !value?.trim())
+    .map(([name]) => name);
+
+  if (missing.length) {
+    throw new Error(`Missing required production environment variables: ${missing.join(", ")}`);
+  }
+  if (!JWT_SECRET || JWT_SECRET.length < 32) {
+    throw new Error("JWT_SECRET must contain at least 32 characters in production.");
+  }
+  if (!CORS_ORIGINS.length) {
+    throw new Error("CORS_ORIGINS must contain at least one allowed frontend origin in production.");
+  }
+  if (
+    CORS_ORIGINS.some((origin) => {
+      try {
+        const url = new URL(origin);
+        return url.protocol !== "https:" || url.origin !== origin;
+      } catch {
+        return true;
+      }
+    })
+  ) {
+    throw new Error("CORS_ORIGINS must be a comma-separated list of HTTPS origins without paths.");
+  }
+}
+
+validateProductionEnvironment();
+
+const allowedOrigins = new Set(CORS_ORIGINS);
+app.use(
+  cors({
+    origin(origin, callback) {
+      callback(null, !IS_PRODUCTION || !origin || allowedOrigins.has(origin));
+    },
+  }),
+);
 app.use(express.json({ limit: "1mb" }));
 
 function getImageBucket() {
@@ -913,9 +964,10 @@ mongoose.connect(MONGO_URI, { dbName: MONGO_DB_NAME }).then(async () => {
   const imageCollection = await database.listCollections({ name: "images" }, { nameOnly: true }).hasNext();
   if (!imageCollection) await ImageAsset.createCollection();
   console.log("Connected to MongoDB.");
-  app.listen(PORT, () => {
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`⚡ Assestify Hub Express API Server running on http://localhost:${PORT}`);
   });
 }).catch(err => {
   console.error("❌ Failed to connect to MongoDB", err);
+  process.exitCode = 1;
 });
