@@ -9,8 +9,8 @@ import { Mail, Phone, MapPin, Send, ArrowUpRight, Building2, Globe } from "lucid
 export const Route = createFileRoute("/contact")({
   head: () => ({
     meta: [
-      { title: "Contact Assetify Hub | Get In Touch" },
-      { name: "description", content: "Reach out to Assetify Hub engineering team. Global offices in New York, London, Dhaka, and Singapore." },
+      { title: "Contact Assestify Hub | Get In Touch" },
+      { name: "description", content: "Reach out to Assestify Hub engineering team. Global offices in New York, London, Dhaka, and Singapore." },
     ],
   }),
   component: ContactPage,
@@ -30,7 +30,7 @@ function ContactPage() {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
     const subject = `General Contact Enquiry: ${String(data.get("service"))}`;
-    const body = `Hello Assetify Hub,\n\n${String(data.get("message"))}\n\nFrom: ${String(data.get("name"))}\nEmail: ${String(data.get("email"))}\nCompany: ${String(data.get("company"))}\nInterest: ${String(data.get("service"))}`;
+    const body = `Hello Assestify Hub,\n\n${String(data.get("message"))}\n\nFrom: ${String(data.get("name"))}\nEmail: ${String(data.get("email"))}\nCompany: ${String(data.get("company"))}\nInterest: ${String(data.get("service"))}`;
     
     // Per AGENTS.md rule: send via prefilled email draft
     window.location.href = `mailto:welisten@assetify.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

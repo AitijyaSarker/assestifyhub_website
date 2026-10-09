@@ -7,8 +7,8 @@ import { Linkedin, Twitter, Github } from "lucide-react";
 export const Route = createFileRoute("/team")({
   head: () => ({
     meta: [
-      { title: "Leadership & Team | Assetify Hub" },
-      { name: "description", content: "Meet the executive leadership and senior engineering team architecting Assetify Hub platforms." },
+      { title: "Leadership & Team | Assestify Hub" },
+      { name: "description", content: "Meet the executive leadership and senior engineering team architecting Assestify Hub platforms." },
     ],
   }),
   component: TeamPage,

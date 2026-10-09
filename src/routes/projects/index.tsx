@@ -12,8 +12,8 @@ export const Route = createFileRoute("/projects/")({
   }),
   head: () => ({
     meta: [
-      { title: "Portfolio & Case Studies | Assetify Hub" },
-      { name: "description", content: "Explore Assetify Hub illustrative design concepts, mobile experiences, and web application platforms." },
+      { title: "Portfolio & Case Studies | Assestify Hub" },
+      { name: "description", content: "Explore Assestify Hub illustrative design concepts, mobile experiences, and web application platforms." },
     ],
   }),
   component: ProjectsIndexPage,

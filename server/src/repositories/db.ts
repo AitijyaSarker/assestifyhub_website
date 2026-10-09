@@ -14,13 +14,13 @@ class DBRepository {
     let settings = await Settings.findOne({});
     if (!settings) {
       settings = await Settings.create({
-        brandName: "Assetify Hub",
+        brandName: "Assestify Hub",
         tagline: "Architecting your digital future.",
         logoUrlLight: "/favicon.svg",
         logoUrlDark: "/favicon.svg",
         contactEmail: "welisten@assetify.com",
         contactPhone: "+1 (800) 555-2773",
-        address: "100 Innovation Way, Suite 400, New York, NY 10001",
+        address: "Purabi -10, Bagabari, sylhet City, Sylhet, bangladesh",
         socialLinks: {
           linkedin: "https://linkedin.com",
           twitter: "https://twitter.com",

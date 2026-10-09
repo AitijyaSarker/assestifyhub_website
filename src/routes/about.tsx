@@ -8,8 +8,8 @@ import architecture from "@/assets/architecture.jpg";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "About Assetify Hub | Enterprise Technology Partner" },
-      { name: "description", content: "Learn about Assetify Hub's mission, engineering roots, leadership story, and track record." },
+      { title: "About Assestify Hub | Enterprise Technology Partner" },
+      { name: "description", content: "Learn about Assestify Hub's mission, engineering roots, leadership story, and track record." },
     ],
   }),
   component: AboutPage,
@@ -17,10 +17,10 @@ export const Route = createFileRoute("/about")({
 
 function AboutPage() {
   const milestones = [
-    { year: "2020", title: "Foundation", detail: "Assetify Hub was established to bring enterprise software engineering discipline to high-growth tech ventures." },
+    { year: "2020", title: "Foundation", detail: "Assestify Hub was established to bring enterprise software engineering discipline to high-growth tech ventures." },
     { year: "2022", title: "Cloud Security Practice", detail: "Launched Zero-Trust cybersecurity and cloud infrastructure engineering division." },
     { year: "2024", title: "Global Expansion", detail: "Expanded operations across North America, Europe, and Asia with 50+ full-stack engineers and designers." },
-    { year: "2026", title: "Assetify CMS 2.0", detail: "Pioneered real-time reactive CMS page builders and high-contrast dual-theme UI design systems." }
+    { year: "2026", title: "Assestify CMS 2.0", detail: "Pioneered real-time reactive CMS page builders and high-contrast dual-theme UI design systems." }
   ];
 
   return (
@@ -36,7 +36,7 @@ function AboutPage() {
                 Architecting Digital Solutions Built Around <span className="text-primary">Your Business.</span>
               </h1>
               <p className="text-base text-muted-foreground mt-4 leading-relaxed">
-                At Assetify Hub, we combine deep technical execution with thoughtful visual experience design. We don't just build websites or software—we engineer scalable digital assets that empower businesses to lead their industries.
+                At Assestify Hub, we combine deep technical execution with thoughtful visual experience design. We don't just build websites or software—we engineer scalable digital assets that empower businesses to lead their industries.
               </p>
               <div className="pt-6">
                 <Button variant="brand" asChild>
@@ -46,7 +46,7 @@ function AboutPage() {
             </div>
 
             <div className="hero-visual">
-              <img src={architecture} alt="Assetify Hub HQ Concept Architecture" className="rounded-2xl shadow-xl border border-border" />
+              <img src={architecture} alt="Assestify Hub HQ Concept Architecture" className="rounded-2xl shadow-xl border border-border" />
             </div>
           </div>
 

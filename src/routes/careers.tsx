@@ -8,8 +8,8 @@ import { MapPin, ArrowRight } from "lucide-react";
 export const Route = createFileRoute("/careers")({
   head: () => ({
     meta: [
-      { title: "Careers & Job Openings | Assetify Hub" },
-      { name: "description", content: "Join Assetify Hub's software engineering and UI/UX product design teams." },
+      { title: "Careers & Job Openings | Assestify Hub" },
+      { name: "description", content: "Join Assestify Hub's software engineering and UI/UX product design teams." },
     ],
   }),
   component: CareersPage,
@@ -28,7 +28,7 @@ function CareersPage() {
           <div className="text-center max-w-2xl mx-auto mb-16">
             <div className="eyebrow justify-center">Join Our Team</div>
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground">
-              Build What's Next at <span className="text-primary">Assetify Hub</span>
+              Build What's Next at <span className="text-primary">Assestify Hub</span>
             </h1>
             <p className="text-base text-muted-foreground mt-4 leading-relaxed">
               Explore current openings and contact us by email to ask about a role or share your experience.
@@ -57,7 +57,7 @@ function CareersPage() {
                 </div>
 
                 <Button variant="brand" className="shrink-0" asChild>
-                  <a href={`mailto:${settings.contactEmail}?subject=${encodeURIComponent(`Career enquiry: ${job.title}`)}&body=${encodeURIComponent(`Hello Assetify Hub,\n\nI am interested in the ${job.title} role.\n\nName:\nEmail:\nRelevant experience:\n`)}`}>
+                  <a href={`mailto:${settings.contactEmail}?subject=${encodeURIComponent(`Career enquiry: ${job.title}`)}&body=${encodeURIComponent(`Hello Assestify Hub,\n\nI am interested in the ${job.title} role.\n\nName:\nEmail:\nRelevant experience:\n`)}`}>
                     Ask about this role <ArrowRight className="size-4 ml-1" />
                   </a>
                 </Button>

@@ -19,8 +19,8 @@ import {
 export const Route = createFileRoute("/process")({
   head: () => ({
     meta: [
-      { title: "Our Development Process | Assetify Hub" },
-      { name: "description", content: "Explore Assetify Hub's proven 7-step engineering process: Discover, Plan, Design, Develop, Test, Launch, and Scale." },
+      { title: "Our Development Process | Assestify Hub" },
+      { name: "description", content: "Explore Assestify Hub's proven 7-step engineering process: Discover, Plan, Design, Develop, Test, Launch, and Scale." },
     ],
   }),
   component: ProcessPage,

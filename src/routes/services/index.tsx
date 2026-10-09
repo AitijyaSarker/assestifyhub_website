@@ -8,8 +8,8 @@ import { ArrowRight, Code2, TrendingUp, ShieldCheck, CheckCircle2 } from "lucide
 export const Route = createFileRoute("/services/")({
   head: () => ({
     meta: [
-      { title: "Services & Capabilities Catalogue | Assetify Hub" },
-      { name: "description", content: "Explore Assetify Hub's capabilities across Engineering & Design, Brand Growth, and Cloud Security." },
+      { title: "Services & Capabilities Catalogue | Assestify Hub" },
+      { name: "description", content: "Explore Assestify Hub's capabilities across Engineering & Design, Brand Growth, and Cloud Security." },
     ],
   }),
   component: ServicesIndexPage,

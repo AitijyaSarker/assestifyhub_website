@@ -11,8 +11,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/review")({
   head: () => ({
     meta: [
-      { title: "Client Reviews & Feedback | Assetify Hub" },
-      { name: "description", content: "Read authentic feedback from leaders and engineering teams who partner with Assetify Hub, or share your own experience." },
+      { title: "Client Reviews & Feedback | Assestify Hub" },
+      { name: "description", content: "Read authentic feedback from leaders and engineering teams who partner with Assestify Hub, or share your own experience." },
     ],
   }),
   component: ReviewPage,
@@ -106,7 +106,7 @@ function ReviewPage() {
             </div>
             <div className="eyebrow justify-center">Client Testimonials</div>
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground mt-2">
-              What Partners Say About <span className="text-primary">Assetify Hub</span>
+              What Partners Say About <span className="text-primary">Assestify Hub</span>
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground mt-4 leading-relaxed max-w-2xl mx-auto">
               {siteContent.reviewsTitle || "Explore authentic impressions from engineering teams and leaders who build digital products with us."} Read their experiences or submit your own.
@@ -205,7 +205,7 @@ function ReviewPage() {
               <Sparkles className="size-5 text-primary" /> Share Your Experience
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Tell us about collaborating with Assetify Hub. Reviews are moderated prior to public publication.
+              Tell us about collaborating with Assestify Hub. Reviews are moderated prior to public publication.
             </DialogDescription>
           </DialogHeader>
 

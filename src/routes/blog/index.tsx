@@ -8,8 +8,8 @@ import { Search, Clock, ArrowRight } from "lucide-react";
 export const Route = createFileRoute("/blog/")({
   head: () => ({
     meta: [
-      { title: "Blog & Insights | Assetify Hub" },
-      { name: "description", content: "Engineering insights, software architecture guides, and cloud security articles from Assetify Hub." },
+      { title: "Blog & Insights | Assestify Hub" },
+      { name: "description", content: "Engineering insights, software architecture guides, and cloud security articles from Assestify Hub." },
     ],
   }),
   component: BlogIndexPage,

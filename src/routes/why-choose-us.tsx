@@ -19,8 +19,8 @@ import {
 export const Route = createFileRoute("/why-choose-us")({
   head: () => ({
     meta: [
-      { title: "Why Choose Assetify Hub | Enterprise Engineering Standards" },
-      { name: "description", content: "Discover why teams choose Assetify Hub: zero-compromise engineering, zero-trust security, sub-100ms render targets, and SLA-backed partnerships." },
+      { title: "Why Choose Assestify Hub | Enterprise Engineering Standards" },
+      { name: "description", content: "Discover why teams choose Assestify Hub: zero-compromise engineering, zero-trust security, sub-100ms render targets, and SLA-backed partnerships." },
     ],
   }),
   component: WhyChooseUsPage,
@@ -77,7 +77,7 @@ function WhyChooseUsPage() {
           <div className="text-center max-w-3xl mx-auto mb-16 sm:mb-20">
             <div className="eyebrow justify-center">Engineering Philosophy</div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-foreground">
-              Why Forward-Thinking Teams Choose <span className="text-primary">Assetify Hub</span>
+              Why Forward-Thinking Teams Choose <span className="text-primary">Assestify Hub</span>
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground mt-4 leading-relaxed">
               We bridge the gap between creative visual design and enterprise software engineering. Here is how we guarantee outcomes for our partners.
@@ -132,9 +132,9 @@ function WhyChooseUsPage() {
           {/* Quality Standards Comparison Table */}
           <div className="p-8 sm:p-10 rounded-3xl border border-border bg-card mb-20 space-y-6">
             <div className="text-center max-w-xl mx-auto">
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">The Assetify Engineering Standard</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">The Assestify Engineering Standard</h2>
               <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                Comparing conventional outsourcing with Assetify Hub dedicated product engineering.
+                Comparing conventional outsourcing with Assestify Hub dedicated product engineering.
               </p>
             </div>
 
@@ -144,7 +144,7 @@ function WhyChooseUsPage() {
                   <tr>
                     <th className="p-4">Engineering Metric</th>
                     <th className="p-4 text-muted-foreground">Standard Web Agencies</th>
-                    <th className="p-4 text-primary bg-accent/40 font-bold">Assetify Hub Standards</th>
+                    <th className="p-4 text-primary bg-accent/40 font-bold">Assestify Hub Standards</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">

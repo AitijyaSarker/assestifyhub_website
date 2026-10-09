@@ -21,7 +21,7 @@ export function ProjectScopePlanner({
   const prepareEnquiry = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const body = [
-      "Hello Assetify Hub,",
+      "Hello Assestify Hub,",
       "",
       "I would like to discuss a project.",
       `Service area: ${service}`,

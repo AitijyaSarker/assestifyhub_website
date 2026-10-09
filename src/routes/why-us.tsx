@@ -7,8 +7,8 @@ import { ShieldCheck, Code2, Zap, Cpu, Award, Lock, ArrowUpRight, CheckCircle2 }
 export const Route = createFileRoute("/why-us")({
   head: () => ({
     meta: [
-      { title: "Why Choose Assetify Hub | Engineering Methodology & Standards" },
-      { name: "description", content: "Discover Assetify Hub's enterprise engineering principles, zero-trust security posture, sub-100ms render targets, and client SLA guarantees." },
+      { title: "Why Choose Assestify Hub | Engineering Methodology & Standards" },
+      { name: "description", content: "Discover Assestify Hub's enterprise engineering principles, zero-trust security posture, sub-100ms render targets, and client SLA guarantees." },
     ],
   }),
   component: WhyUsPage,
@@ -58,7 +58,7 @@ function WhyUsPage() {
           <div className="text-center max-w-3xl mx-auto mb-16">
             <div className="eyebrow justify-center">Engineering Philosophy</div>
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground">
-              Why Forward-Thinking Companies Choose <span className="text-primary">Assetify Hub</span>
+              Why Forward-Thinking Companies Choose <span className="text-primary">Assestify Hub</span>
             </h1>
             <p className="text-base text-muted-foreground mt-4 leading-relaxed">
               We bridge the gap between creative visual design and enterprise software engineering. Here is how we guarantee outcomes for our partners.
@@ -84,8 +84,8 @@ function WhyUsPage() {
           {/* Quality Standards Comparison Table */}
           <div className="p-8 rounded-2xl border border-border bg-card mb-20 space-y-6">
             <div className="text-center max-w-xl mx-auto">
-              <h2 className="text-2xl font-bold text-foreground">The Assetify Engineering Standard</h2>
-              <p className="text-xs text-muted-foreground mt-1">Comparing traditional web agencies with Assetify Hub product engineering.</p>
+              <h2 className="text-2xl font-bold text-foreground">The Assestify Engineering Standard</h2>
+              <p className="text-xs text-muted-foreground mt-1">Comparing traditional web agencies with Assestify Hub product engineering.</p>
             </div>
 
             <div className="overflow-x-auto">
@@ -94,7 +94,7 @@ function WhyUsPage() {
                   <tr>
                     <th className="p-4">Engineering Metric</th>
                     <th className="p-4 text-muted-foreground">Standard Web Agencies</th>
-                    <th className="p-4 text-primary bg-accent/40 font-bold">Assetify Hub Standards</th>
+                    <th className="p-4 text-primary bg-accent/40 font-bold">Assestify Hub Standards</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">

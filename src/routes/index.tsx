@@ -30,9 +30,9 @@ import heroVideo from "@/assets/assestifyrobo.mp4";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Assetify Hub | Enterprise Engineering & Digital Growth" },
-      { name: "description", content: "Assetify Hub delivers custom software, web applications, SaaS architecture, UI/UX design, digital marketing, and enterprise cybersecurity." },
-      { property: "og:title", content: "Assetify Hub | Enterprise Engineering & Digital Growth" },
+      { title: "Assestify Hub | Enterprise Engineering & Digital Growth" },
+      { name: "description", content: "Assestify Hub delivers custom software, web applications, SaaS architecture, UI/UX design, digital marketing, and enterprise cybersecurity." },
+      { property: "og:title", content: "Assestify Hub | Enterprise Engineering & Digital Growth" },
       { property: "og:description", content: "Architecting your digital future with software engineering, design, growth strategy, and security." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -68,7 +68,7 @@ function IndexPage() {
           <div className="site-container hero-grid">
             <div className="reveal-up hero-copy-block">
               <div className="eyebrow justify-center">{siteContent.heroEyebrow}</div>
-              <h1 id="hero-title" className="hero-title">Assetify Hub.</h1>
+              <h1 id="hero-title" className="hero-title">Assestify Hub</h1>
               <h2 className="hero-statement">
                 {siteContent.heroHeadline}
               </h2>
@@ -113,7 +113,7 @@ function IndexPage() {
                 loop
                 playsInline
                 preload="metadata"
-                aria-label="Assetify Hub animated technology showcase"
+                aria-label="Assestify Hub animated technology showcase"
               />
             </figure>
           </div>
@@ -125,7 +125,7 @@ function IndexPage() {
         <section id="company" className="py-16 sm:py-20 border-y border-border" aria-labelledby="company-title">
           <div className="site-container">
             <div className="home-section-heading mb-10">
-              <div className="eyebrow justify-center">About Assetify Hub</div>
+              <div className="eyebrow justify-center">About Assestify Hub</div>
               <h2 id="company-title" className="section-title">
                 {siteContent.aboutTitle}
               </h2>
@@ -251,44 +251,48 @@ function IndexPage() {
         </section>
         </div>}
 
-        {sectionVisible("products") && <div style={{ order: sectionOrder("products") }}><ProductsSection projects={projects} title={siteContent.productsTitle} /></div>}
-        <section
-          id="network-security"
-          aria-labelledby="network-security-title"
-          className="border-y border-border bg-muted/30 py-16 sm:py-20"
-        >
-          <div className="site-container">
-            <div className="mx-auto flex max-w-5xl flex-col gap-8 rounded-3xl border border-primary/20 bg-card p-7 shadow-sm sm:p-10 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-2xl">
-                <div className="eyebrow">Network & Cybersecurity</div>
-                <h2 id="network-security-title" className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                  Stronger connections. Safer systems.
-                </h2>
-                <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                  Need support with network infrastructure, cloud security, or cybersecurity?
-                  We’re open to helping you plan, protect, and strengthen your technology.
-                </p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {["Network infrastructure", "Cloud security", "Cybersecurity"].map((service) => (
-                    <span
-                      key={service}
-                      className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground"
-                    >
-                      {service}
-                    </span>
-                  ))}
+        <div style={{ order: sectionOrder("products") }}>
+          {sectionVisible("products") && (
+            <ProductsSection projects={projects} title={siteContent.productsTitle} />
+          )}
+          <section
+            id="network-security"
+            aria-labelledby="network-security-title"
+            className="border-y border-border bg-muted/30 py-16 sm:py-20"
+          >
+            <div className="site-container">
+              <div className="mx-auto flex max-w-5xl flex-col gap-8 rounded-3xl border border-primary/20 bg-card p-7 shadow-sm sm:p-10 lg:flex-row lg:items-center lg:justify-between">
+                <div className="max-w-2xl">
+                  <div className="eyebrow">Network & Cybersecurity</div>
+                  <h2 id="network-security-title" className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                    Stronger connections. Safer systems.
+                  </h2>
+                  <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+                    Need support with network infrastructure, cloud security, or cybersecurity?
+                    We’re open to helping you plan, protect, and strengthen your technology.
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {["Network infrastructure", "Cloud security", "Cybersecurity"].map((service) => (
+                      <span
+                        key={service}
+                        className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground"
+                      >
+                        {service}
+                      </span>
+                    ))}
+                  </div>
                 </div>
+                <Button variant="brand" className="shrink-0" asChild>
+                  <a
+                    href={`mailto:${settings.contactEmail}?subject=${encodeURIComponent("Network and cybersecurity enquiry")}`}
+                  >
+                    Discuss your needs <ArrowUpRight className="size-4" />
+                  </a>
+                </Button>
               </div>
-              <Button variant="brand" className="shrink-0" asChild>
-                <a
-                  href={`mailto:${settings.contactEmail}?subject=${encodeURIComponent("Network and cybersecurity enquiry")}`}
-                >
-                  Discuss your needs <ArrowUpRight className="size-4" />
-                </a>
-              </Button>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
         {sectionVisible("gallery") && <div style={{ order: sectionOrder("gallery") }}><GallerySection items={gallery} title={siteContent.galleryTitle} /></div>}
         {sectionVisible("awards") && <div style={{ order: sectionOrder("awards") }}><AwardsSection awards={awards} title={siteContent.awardsTitle} /></div>}
         {sectionVisible("reviews") && <div style={{ order: sectionOrder("reviews") }}><ReviewsSection reviews={reviews} title={siteContent.reviewsTitle} /></div>}

@@ -7,8 +7,8 @@ import { Calendar, ShieldCheck, Clock } from "lucide-react";
 export const Route = createFileRoute("/book-consultation")({
   head: () => ({
     meta: [
-      { title: "Book Technical Consultation | Assetify Hub" },
-      { name: "description", content: "Schedule a 45-minute technical discovery session with Assetify Hub software engineers and solution architects." },
+      { title: "Book Technical Consultation | Assestify Hub" },
+      { name: "description", content: "Schedule a 45-minute technical discovery session with Assestify Hub software engineers and solution architects." },
     ],
   }),
   component: BookConsultationPage,

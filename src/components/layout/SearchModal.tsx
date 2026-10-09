@@ -82,7 +82,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
         <div className="max-h-[60vh] overflow-y-auto p-4">
           {!query.trim() ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
-              Type keywords to search across <span className="text-primary font-medium">Assetify Hub</span> services, portfolio, blog insights, and custom pages.
+              Type keywords to search across <span className="text-primary font-medium">Assestify Hub</span> services, portfolio, blog insights, and custom pages.
             </div>
           ) : results.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted-foreground">

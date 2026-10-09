@@ -271,7 +271,7 @@ export function AdminDashboard() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Assetify_Consultation_Leads_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `Assestify_Consultation_Leads_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -312,7 +312,7 @@ export function AdminDashboard() {
               <span className="p-1.5 rounded-lg bg-primary text-white">
                 <Sparkles className="size-4" />
               </span>
-              Assetify <span className="text-primary">CMS</span>
+              Assestify <span className="text-primary">CMS</span>
             </div>
             <div className="flex items-center gap-1">
               {/* Theme Toggle */}
@@ -772,7 +772,7 @@ export function AdminDashboard() {
               <div>
                 <h2 className="text-2xl font-bold text-foreground">Services & Capability Pillars CRUD</h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Create, edit, and reorganize Assetify Hub's 3 capability pillars and detailed sub-services.
+                  Create, edit, and reorganize Assestify Hub's 3 capability pillars and detailed sub-services.
                 </p>
               </div>
 
@@ -1141,7 +1141,7 @@ export function AdminDashboard() {
             <div>
               <h2 className="text-2xl font-bold text-foreground">Homepage Section Layout & Order</h2>
               <p className="text-xs text-muted-foreground mt-1">
-                Reorder sections and toggle public visibility for every block on the Assetify Hub landing page.
+                Reorder sections and toggle public visibility for every block on the Assestify Hub landing page.
               </p>
             </div>
 

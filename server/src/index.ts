@@ -90,7 +90,7 @@ const requireAdmin: express.RequestHandler = (req, res, next) => {
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "healthy",
-    app: "Assetify Hub Express API Server",
+    app: "Assestify Hub Express API Server",
     database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
     databaseName: mongoose.connection.db?.databaseName ?? null,
     timestamp: new Date().toISOString()
@@ -914,7 +914,7 @@ mongoose.connect(MONGO_URI, { dbName: MONGO_DB_NAME }).then(async () => {
   if (!imageCollection) await ImageAsset.createCollection();
   console.log("Connected to MongoDB.");
   app.listen(PORT, () => {
-    console.log(`⚡ Assetify Hub Express API Server running on http://localhost:${PORT}`);
+    console.log(`⚡ Assestify Hub Express API Server running on http://localhost:${PORT}`);
   });
 }).catch(err => {
   console.error("❌ Failed to connect to MongoDB", err);

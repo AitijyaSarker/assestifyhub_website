@@ -7,6 +7,7 @@ import {
   MapPin,
   Phone,
   ShieldCheck,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCmsStore } from "@/hooks/use-cms-store";
@@ -40,7 +41,7 @@ export function Footer() {
                 height={38} 
               />
               <span className="font-bold tracking-tight text-xl">
-                Assetify <span className="text-primary">Hub.</span>
+                Assestify <span className="text-primary">Hub</span>
               </span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
@@ -49,6 +50,20 @@ export function Footer() {
             <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
               <div className="flex items-center gap-1.5 font-medium text-foreground">
                 <ShieldCheck className="size-4 text-primary" /> ISO 27001 & SOC 2 Ready
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-xs">
+              <div className="inline-flex items-center gap-1.5 font-semibold text-foreground" aria-label="52 reviews">
+                <Star className="size-4 fill-amber-400 text-amber-400" aria-hidden="true" />
+                52 Reviews
+              </div>
+              <div className="inline-flex items-center gap-2 text-muted-foreground" aria-label="Glassdoor rating 4.6 out of 5 stars">
+                <span className="font-semibold text-foreground">Glassdoor 4.6</span>
+                <span className="inline-flex gap-0.5 text-amber-400" aria-hidden="true">
+                  {Array.from({ length: 5 }, (_, index) => (
+                    <Star key={index} className="size-3.5 fill-current" />
+                  ))}
+                </span>
               </div>
             </div>
 
@@ -85,7 +100,20 @@ export function Footer() {
           <div>
             <h4 className="font-bold text-xs uppercase tracking-wider text-foreground mb-4">Company</h4>
             <ul className="space-y-2 text-xs">
-              <li><Link to="/" className="text-muted-foreground hover:text-primary transition-colors">Home</Link></li>
+              <li>
+                <Link
+                  to="/"
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                  onClick={(event) => {
+                    if (window.location.pathname === "/") {
+                      event.preventDefault();
+                      window.scrollTo(0, 0);
+                    }
+                  }}
+                >
+                  Home
+                </Link>
+              </li>
               <li><Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">About</Link></li>
               <li><Link to="/services" className="text-muted-foreground hover:text-primary transition-colors">Services</Link></li>
               <li><Link to="/projects" className="text-muted-foreground hover:text-primary transition-colors">Projects</Link></li>
@@ -134,7 +162,7 @@ export function Footer() {
                 href={settings.socialLinks.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Visit Assetify Hub on Facebook"
+                aria-label="Visit Assestify Hub on Facebook"
                 className="rounded-full p-2 hover:bg-primary/10 hover:text-primary transition-colors"
               >
                 <Facebook className="size-4" aria-hidden="true" />
@@ -145,7 +173,7 @@ export function Footer() {
                 href={settings.socialLinks.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Visit Assetify Hub on LinkedIn"
+                aria-label="Visit Assestify Hub on LinkedIn"
                 className="rounded-full p-2 hover:bg-primary/10 hover:text-primary transition-colors"
               >
                 <Linkedin className="size-4" aria-hidden="true" />

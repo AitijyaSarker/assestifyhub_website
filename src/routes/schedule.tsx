@@ -7,11 +7,11 @@ import { Calendar, ShieldCheck, Clock } from "lucide-react";
 export const Route = createFileRoute("/schedule")({
   head: () => ({
     meta: [
-      { title: "Schedule a Consultation Call | Assetify Hub" },
+      { title: "Schedule a Consultation Call | Assestify Hub" },
       {
         name: "description",
         content:
-          "Select your preferred date and time slot to schedule a technical discovery call with Assetify Hub software engineers and architects.",
+          "Select your preferred date and time slot to schedule a technical discovery call with Assestify Hub software engineers and architects.",
       },
     ],
   }),

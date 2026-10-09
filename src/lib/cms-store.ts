@@ -1,4 +1,4 @@
-// Assetify Hub CMS Store & Data Persistence Layer
+// Assestify Hub CMS Store & Data Persistence Layer
 
 export interface SiteSettings {
   brandName: string;
@@ -265,7 +265,7 @@ export interface ContactMessage {
 
 // DEFAULT INITIAL SEED DATA
 const defaultSettings: SiteSettings = {
-  brandName: "Assetify Hub",
+  brandName: "Assestify Hub",
   tagline: "Architecting your digital future.",
   logoUrlLight: "/favicon.svg",
   logoUrlDark: "/favicon.svg",
@@ -274,7 +274,7 @@ const defaultSettings: SiteSettings = {
   contactPhone: "+1 (800) 555-2773",
   whatsappContact: "",
   messengerContact: "",
-  address: "100 Innovation Way, Suite 400, New York, NY 10001",
+  address: "Purabi -10, Bagabari, sylhet City, Sylhet, bangladesh",
   socialLinks: {
     linkedin: "https://linkedin.com",
     twitter: "https://twitter.com",
@@ -284,6 +284,33 @@ const defaultSettings: SiteSettings = {
   themeDefault: "light",
   analyticsId: "G-ASSETIFY2026",
 };
+
+function normalizeBrandCopy<T>(value: T): T {
+  if (typeof value === "string") {
+    return value.replaceAll("Assetify", "Assestify") as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeBrandCopy(item)) as T;
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, child]) => [key, normalizeBrandCopy(child)]),
+    ) as T;
+  }
+  return value;
+}
+
+function normalizeSettings(settings: Partial<SiteSettings>): SiteSettings {
+  const normalized = { ...defaultSettings, ...settings };
+  if (normalized.brandName === "Assetify Hub") normalized.brandName = defaultSettings.brandName;
+  if (
+    normalized.address === "100 Innovation Way, Suite 400, New York, NY 10001" ||
+    normalized.address === "Purabi -10, Bagabari, Sylhet City, Sylhet, Bangladesh"
+  ) {
+    normalized.address = defaultSettings.address;
+  }
+  return normalized;
+}
 
 const defaultServices: Service[] = [
   {
@@ -611,12 +638,12 @@ const defaultTeam: TeamMember[] = [
 ];
 
 const defaultSectionLayouts: PageSectionLayout[] = [
-  { id: "sec-1", sectionId: "company", title: "About Assetify Hub", order: 1, isVisible: true },
+  { id: "sec-1", sectionId: "company", title: "About Assestify Hub", order: 1, isVisible: true },
   { id: "sec-2", sectionId: "tech_marquee", title: "Technology Ecosystem", order: 2, isVisible: true },
   { id: "sec-3", sectionId: "scope_planner", title: "Project Scope Planner", order: 3, isVisible: true },
   { id: "sec-4", sectionId: "services", title: "Service Categories", order: 4, isVisible: true },
   { id: "sec-5", sectionId: "products", title: "Products & Projects", order: 5, isVisible: true },
-  { id: "sec-6", sectionId: "why_us", title: "Why Assetify Hub", order: 6, isVisible: true },
+  { id: "sec-6", sectionId: "why_us", title: "Why Assestify Hub", order: 6, isVisible: true },
   { id: "sec-7", sectionId: "process", title: "How We Work", order: 7, isVisible: true },
   { id: "sec-8", sectionId: "gallery", title: "Gallery", order: 8, isVisible: true },
   { id: "sec-9", sectionId: "awards", title: "Awards & Recognition", order: 9, isVisible: true },
@@ -636,7 +663,7 @@ const defaultSiteContent: SiteContent = {
   servicesTitle: "Different disciplines. One connected vision.",
   scopeTitle: "Estimate Your Project Scope",
   scopeCopy: "Outline what you are planning and prepare a structured email for our team. This is a discovery aid, not a price or delivery-time estimate.",
-  whyTitle: "Why Choose Assetify Hub",
+  whyTitle: "Why Choose Assestify Hub",
   whyCopy: "We connect thoughtful product work with clear communication and responsible engineering, from first conversation through ongoing support.",
   whyItems: [
     { title: "Engineering for the problem", desc: "Choose an architecture and tools to suit the product's needs, rather than forcing every project into the same stack." },
@@ -661,7 +688,7 @@ const defaultSiteContent: SiteContent = {
   careersTitle: "Build what's next with us",
   faqTitle: "Common Questions",
   faqs: [
-    { question: "What services does Assetify Hub specialize in?", answer: "Assetify Hub connects software engineering, product and interface design, digital growth, and infrastructure services." },
+    { question: "What services does Assestify Hub specialize in?", answer: "Assestify Hub connects software engineering, product and interface design, digital growth, and infrastructure services." },
     { question: "How do I enquire about a consultation?", answer: "Choose a preferred date and an available time, then prepare an email enquiry. Your email app opens a draft; the request is not sent or booked until you send it." },
     { question: "What can the site administrator manage?", answer: "The private admin area manages site content, service categories, products and projects, vacancies, gallery items, awards, reviews, consultation availability, and homepage layout. Published CMS changes are stored in MongoDB." },
     { question: "What technology stack do you use?", answer: "We build with React, Next.js, Vite, TypeScript, Node.js, Express, MongoDB, PostgreSQL, Tailwind CSS, AWS, Docker, and Cloudflare." },
@@ -674,7 +701,7 @@ const defaultCustomPages: CustomPage[] = [
   {
     id: "page-1",
     slug: "engineering-standards",
-    title: "Assetify Engineering Standards",
+    title: "Assestify Engineering Standards",
     metaDescription: "Our strict engineering methodology, security guidelines, and performance guarantees.",
     blocks: [
       {
@@ -729,7 +756,7 @@ const defaultAuditLogs: AuditLog[] = [
     id: "log-1",
     userEmail: "admin@assetify.com",
     action: "SYSTEM_INIT",
-    details: "Initialized Assetify Hub CMS & Data Store",
+    details: "Initialized Assestify Hub CMS & Data Store",
     timestamp: new Date().toISOString()
   }
 ];
@@ -747,9 +774,9 @@ const defaultAwards: Award[] = [
 ];
 
 const defaultReviews: Review[] = [
-  { id: "rev-1", name: "David Sterling", company: "Apex Global Financial", role: "Chief Technology Officer", rating: 5, message: "Assetify Hub engineered our core trading microservices with flawless precision. Their attention to performance and security exceeded all expectations.", approved: true, createdAt: "2026-09-15" },
+  { id: "rev-1", name: "David Sterling", company: "Apex Global Financial", role: "Chief Technology Officer", rating: 5, message: "Assestify Hub engineered our core trading microservices with flawless precision. Their attention to performance and security exceeded all expectations.", approved: true, createdAt: "2026-09-15" },
   { id: "rev-2", name: "Elena Rostova", company: "Vanguard Health Systems", role: "VP of Product", rating: 5, message: "The interface clarity and design system they created transformed how our clinicians interact with patient records. Truly a world-class team.", approved: true, createdAt: "2026-09-28" },
-  { id: "rev-3", name: "Marcus Chen", company: "Hyperion Logistics", role: "Head of Infrastructure", rating: 5, message: "From zero-trust network hardening to automated failover, Assetify Hub delivered rock-solid reliability on our cloud transition.", approved: true, createdAt: "2026-10-02" },
+  { id: "rev-3", name: "Marcus Chen", company: "Hyperion Logistics", role: "Head of Infrastructure", rating: 5, message: "From zero-trust network hardening to automated failover, Assestify Hub delivered rock-solid reliability on our cloud transition.", approved: true, createdAt: "2026-10-02" },
 ];
 
 const defaultTimeSlots: AvailabilitySlot[] = [
@@ -882,9 +909,12 @@ class CmsStore {
       }
       if (!result.data) return;
 
-      const snapshot = result.data;
+      const snapshot = normalizeBrandCopy(result.data);
       if (snapshot["settings"] && typeof snapshot["settings"] === "object") {
-        this.settings = { ...this.settings, ...snapshot["settings"] as Partial<SiteSettings> };
+        this.settings = normalizeSettings({
+          ...this.settings,
+          ...snapshot["settings"] as Partial<SiteSettings>,
+        });
       }
       if (snapshot["siteContent"] && typeof snapshot["siteContent"] === "object") {
         this.siteContent = { ...defaultSiteContent, ...snapshot["siteContent"] as Partial<SiteContent> };
@@ -940,8 +970,8 @@ class CmsStore {
     try {
       const stored = localStorage.getItem("assetify_cms_data");
       if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.settings) this.settings = parsed.settings;
+        const parsed = normalizeBrandCopy(JSON.parse(stored));
+        if (parsed.settings) this.settings = normalizeSettings(parsed.settings);
         if (parsed.siteContent) this.siteContent = { ...defaultSiteContent, ...parsed.siteContent };
         if (parsed.services) this.services = parsed.services;
         if (Array.isArray(parsed.serviceCategories)) this.serviceCategories = parsed.serviceCategories;

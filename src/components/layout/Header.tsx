@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type MouseEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { 
   Sun, 
@@ -48,12 +48,22 @@ export function Header() {
   const activeCategories = serviceCategories.filter((c) => c.active).sort((a, b) => a.order - b.order);
   const visibleProjects = projects.filter((p) => p.isVisible);
 
+  const handleHomeClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    setMenuOpen(false);
+    if (window.location.pathname === "/") {
+      window.scrollTo(0, 0);
+      return;
+    }
+    navigate({ to: "/" });
+  };
+
   return (
     <>
       <header className="site-header">
         <div className="site-container flex items-center justify-between">
           {/* Brand Logo */}
-          <Link to="/" className="brand-lockup flex items-center gap-2.5">
+          <Link to="/" className="brand-lockup flex items-center gap-2.5" onClick={handleHomeClick}>
             <img 
               src={settings.logoUrlLight || logoData.url} 
               alt={settings.brandName} 
@@ -62,13 +72,13 @@ export function Header() {
               height={38} 
             />
             <span className="font-bold tracking-tight text-xl">
-              Assetify <span className="text-primary">Hub.</span>
+              Assestify <span className="text-primary">Hub</span>
             </span>
           </Link>
 
           {/* Desktop Navigation Tree */}
           <nav aria-label="Main navigation" className="hidden lg:flex items-center gap-6">
-            <Link to="/" className="nav-link font-medium text-sm">
+            <Link to="/" className="nav-link font-medium text-sm" onClick={handleHomeClick}>
               Home
             </Link>
 
@@ -286,7 +296,7 @@ export function Header() {
         {menuOpen && (
           <nav className="site-container mobile-nav lg:hidden mt-3 animate-in fade-in slide-in-from-top-2 space-y-2 pb-4" aria-label="Mobile navigation">
             <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2 pt-2">Navigation</div>
-            <Link to="/" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>Home</Link>
+            <Link to="/" className="nav-link font-semibold py-1.5 block" onClick={handleHomeClick}>Home</Link>
             <Link to="/services" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>Services</Link>
             <Link to="/projects" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>Projects</Link>
             <Link to="/about" className="nav-link font-semibold py-1.5 block" onClick={() => setMenuOpen(false)}>About Us</Link>

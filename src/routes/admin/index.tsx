@@ -9,8 +9,8 @@ import logoData from "@/assets/assetify-logo.svg.asset.json";
 export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
-      { title: "Admin Panel CMS | Assetify Hub" },
-      { name: "description", content: "Secure Content Management System for Assetify Hub website administration." },
+      { title: "Admin Panel CMS | Assestify Hub" },
+      { name: "description", content: "Secure Content Management System for Assestify Hub website administration." },
     ],
   }),
   component: AdminPage,
@@ -44,7 +44,7 @@ function AdminPage() {
           <div className="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center mx-auto shadow-lg shadow-primary/25">
             <Sparkles className="size-6" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Assetify Hub Admin CMS</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Assestify Hub Admin CMS</h1>
           <p className="text-xs text-muted-foreground">Sign in to manage services, leads, portfolio, blog, and layout.</p>
         </div>
 
@@ -83,7 +83,7 @@ function AdminPage() {
         </form>
 
         <p className="text-center text-[11px] text-muted-foreground">
-          Use the administrator credentials configured on the Assetify API server.
+          Use the administrator credentials configured on the Assestify API server.
         </p>
       </div>
     </div>
