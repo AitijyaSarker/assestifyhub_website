@@ -68,7 +68,30 @@ async function proxyApiRequest(request: Request, apiOrigin: string): Promise<Res
       redirect: "manual",
       signal: request.signal,
     });
-    return response;
+    const responseHeaders = new Headers(response.headers);
+    for (const name of [
+      "connection",
+      "content-encoding",
+      "content-length",
+      "keep-alive",
+      "proxy-authenticate",
+      "proxy-authorization",
+      "te",
+      "trailer",
+      "transfer-encoding",
+      "upgrade",
+    ]) {
+      responseHeaders.delete(name);
+    }
+    const body =
+      request.method === "HEAD" || [204, 205, 304].includes(response.status)
+        ? null
+        : response.body;
+    return new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders,
+    });
   } catch (error) {
     console.error("API proxy request failed", error);
     return Response.json(
