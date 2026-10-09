@@ -82,7 +82,7 @@ const buildNavItems = (unreadMessages: number, pendingCalls: number, pendingRevi
   { id: "audit", label: "Users & Audit Log", icon: Users, group: "Advanced" },
 ];
 
-export function AdminDashboard() {
+export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState<
     "overview" | "site-content" | "settings" | "layout" | "leads" | "services" | "tech" | "portfolio" | "blog" | "nav" | "media" | "audit" | "products" | "service-categories" | "vacancies" | "gallery" | "awards" | "time-slots" | "reviews" | "calls" | "messages"
   >("overview");
@@ -110,7 +110,7 @@ export function AdminDashboard() {
     store
   } = useCmsStore();
 
-  const { session, logout } = useAuth();
+  const { session } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [searchTerm, setSearchTerm] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
@@ -428,7 +428,7 @@ export function AdminDashboard() {
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-border">
-          <Button variant="ghost" size="sm" onClick={logout} className="w-full justify-start text-xs text-red-500 hover:bg-red-50 hover:text-red-600">
+          <Button variant="ghost" size="sm" onClick={onLogout} className="w-full justify-start text-xs text-red-500 hover:bg-red-50 hover:text-red-600">
             <LogOut className="size-4 mr-2" /> Logout Session
           </Button>
         </div>

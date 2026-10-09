@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function AdminPage() {
-  const { isAuthenticated, isLoadingSession, login } = useAuth();
+  const { isAuthenticated, isLoadingSession, login, logout } = useAuth();
   const [email, setEmail] = useState("admin@assetify.com");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -31,7 +31,7 @@ function AdminPage() {
   };
 
   if (isAuthenticated) {
-    return <AdminDashboard />;
+    return <AdminDashboard onLogout={logout} />;
   }
   if (isLoadingSession) {
     return <div className="min-h-screen bg-background" aria-label="Checking admin session" />;
