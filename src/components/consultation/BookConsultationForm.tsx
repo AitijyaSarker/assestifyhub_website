@@ -32,6 +32,38 @@ interface BookingRecord {
   status: string;
 }
 
+async function readJsonResponse<T>(response: Response): Promise<T> {
+  if (typeof response.json === "function") {
+    try {
+      return (await response.json()) as T;
+    } catch (error) {
+      if (typeof response.text !== "function") {
+        throw error;
+      }
+    }
+  }
+
+  if (typeof response.text !== "function") {
+    return {} as T;
+  }
+
+  const text = await response.text();
+  if (!text.trim()) {
+    return {} as T;
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    const isHtmlResponse = text.trim().startsWith("<");
+    throw new Error(
+      isHtmlResponse
+        ? "The booking service is currently unavailable. Please try again later."
+        : "The booking service returned an unexpected response. Please try again later.",
+    );
+  }
+}
+
 export function BookConsultationForm() {
   const { timeSlots } = useCmsStore();
   const availableTimeSlots = useMemo(
@@ -76,11 +108,11 @@ export function BookConsultationForm() {
           `/api/schedule/availability?date=${encodeURIComponent(selectedDateKey)}`,
           { signal: controller.signal },
         );
-        const result = (await response.json()) as {
+        const result = (await readJsonResponse<{
           success?: boolean;
           data?: { bookedSlots?: string[] };
           error?: string;
-        };
+        }>(response));
         if (!response.ok || !result.success || !Array.isArray(result.data?.bookedSlots)) {
           throw new Error(result.error || "Could not check time availability.");
         }
@@ -149,11 +181,11 @@ export function BookConsultationForm() {
           message: formData.message,
         }),
       });
-      const result = (await response.json()) as {
+      const result = (await readJsonResponse<{
         success?: boolean;
         data?: BookingRecord;
         error?: string;
-      };
+      }>(response));
       if (!response.ok || !result.success || !result.data?.id) {
         if (response.status === 409) {
           setBookedSlots((current) => [...new Set([...current, selectedTimeSlot])]);

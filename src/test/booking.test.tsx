@@ -99,4 +99,21 @@ describe("public consultation booking", () => {
       screen.queryByRole("heading", { name: "Booking request received" }),
     ).not.toBeInTheDocument();
   });
+
+  it("shows a friendly error when the booking service responds with HTML instead of JSON", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: false,
+        text: async () => "<!doctype html><html><body>Page not found</body></html>",
+      })),
+    );
+
+    render(<BookConsultationForm />);
+    fireEvent.click(screen.getByRole("button", { name: "Select test date" }));
+
+    expect(
+      await screen.findByText("The booking service is currently unavailable. Please try again later."),
+    ).toBeInTheDocument();
+  });
 });
